@@ -5,9 +5,9 @@ import * as fs from 'fs';
 export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "gitextensionwrap" is now active!');
 
-    const helloDisposable = vscode.commands.registerCommand('gitextensionwrap.helloWorld', () => {
-        vscode.window.showInformationMessage('GitShortcut Extension Active!');
-    });
+    // const helloDisposable = vscode.commands.registerCommand('gitextensionwrap.helloWorld', () => {
+    //     vscode.window.showInformationMessage('GitShortcuts Extension Active!');
+    // });
 
     const gitBashDisposable = vscode.commands.registerCommand('gitextensionwrap.openGitBash', async (uri: vscode.Uri) => {
         let targetPath: string;
@@ -31,8 +31,28 @@ export function activate(context: vscode.ExtensionContext) {
             const config = loadOrCreateConfig(targetPath);
             const gitExe = config['git-exe'];
             const bashExe = config['bash-exe'];
-            const shellPath = fs.existsSync(bashExe) ? bashExe : gitExe;
-
+            let maybe_shellPath = fs.existsSync(bashExe) ? bashExe : gitExe;
+            if (!fs.existsSync(maybe_shellPath)) {
+                const newPath = await vscode.window.showInputBox({
+                    title: 'Git Shortcuts: Configure Executable Path',
+                    prompt: 'No valid git/bash executable found. Enter the path (must be absolute):',
+                    value: bashExe || gitExe,
+                    ignoreFocusOut: true,
+                });
+                if (newPath) {
+                    if (!fs.existsSync(newPath)) {
+                        vscode.window.showErrorMessage('Git Shortcuts: Provided path does not exist. Aborting.');
+                        return;
+                    }
+                    config['bash-exe'] = newPath;
+                    saveConfig(targetPath, 'bash-exe', newPath);
+                    maybe_shellPath = newPath;
+                } else {
+                    vscode.window.showErrorMessage('Git Shortcuts: No executable path provided. Aborting.');
+                    return;
+                }
+            }
+            const shellPath = maybe_shellPath;
             // Open panel in main window first, then move it to a new window.
             const panel = vscode.window.createWebviewPanel(
                 'gitShortcuts',
@@ -69,10 +89,12 @@ export function activate(context: vscode.ExtensionContext) {
             terminal.show();
             await vscode.commands.executeCommand('workbench.action.terminal.fontZoomReset');
             await vscode.commands.executeCommand('workbench.action.terminal.fontZoomOut');
-            await vscode.commands.executeCommand('workbench.action.setEditorGroupLayout', {
-                orientation: 0,
-                groups: [{ size: 0.33 }, { size: 0.67 }],
-            });
+            //[2026-05-14T21:20:47.512Z] [openGitBash]
+            //command 'workbench.action.setEditorGroupLayout' not found
+            // await vscode.commands.executeCommand('workbench.action.setEditorGroupLayout', {
+            //     orientation: 0,
+            //     groups: [{ size: 0.33 }, { size: 0.67 }],
+            // });
 
             // --- mutual close logic ---
             let disposed = false;
@@ -155,7 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(helloDisposable, gitBashDisposable);
+    // context.subscriptions.push(helloDisposable, gitBashDisposable);
 }
 
 // ── error logging ─────────────────────────────────────────────────────────────
