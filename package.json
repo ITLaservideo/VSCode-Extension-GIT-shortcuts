@@ -1,6 +1,6 @@
 {
   "name": "gitextensionwrap",
-  "displayName": "Git Extension Wrap",
+  "displayName": "Git Shortcuts",
   "description": "shortcuts for git bash",
   "version": "0.0.1",
   "engines": {
@@ -19,7 +19,7 @@
     "commands": [
       {
         "command": "gitextensionwrap.helloWorld",
-        "title": "Mock Git Shortcut Extension Active!"
+        "title": "GitShortcuts: say hi"
       },
       {
         "command": "gitextensionwrap.openGitBash",
