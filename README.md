@@ -1,4 +1,5 @@
 # install
+`npm install -g @vscode/vsce`
 ```bash
   vsce package  # Generates a .vsix fileecho %CD%
   code.cmd --version # verify using the vscode CLI
