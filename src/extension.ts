@@ -222,6 +222,12 @@ function loadOrCreateConfig(workspacePath: string): ExtConfig {
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
     if (!fs.existsSync(configPath)) {
         fs.writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 4), 'utf8');
+        if (fs.existsSync(path.join(workspacePath, '.gitignore'))) {
+            const gitignoreContent = fs.readFileSync(path.join(workspacePath, '.gitignore'), 'utf8');
+            if (!gitignoreContent.includes('.git-extension-wrap')) {
+                fs.appendFileSync(path.join(workspacePath, '.gitignore'), '\n# Git Shortcuts Extension\n.git-extension-wrap/\n', 'utf8');
+            }
+        }
         return { ...DEFAULT_CONFIG };
     }
     try {
