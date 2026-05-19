@@ -2,7 +2,8 @@
   "name": "gitextensionwrap",
   "displayName": "Git Shortcuts",
   "description": "shortcuts for git bash",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "publisher": "AlwaysLearn",
   "engines": {
     "vscode": "^1.120.0"
   },

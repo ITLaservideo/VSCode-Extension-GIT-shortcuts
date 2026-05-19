@@ -39,5 +39,10 @@ Git for Windows. Adjust `git-exe` / `bash-exe` for portable or custom installs.
 
 ## Release Notes
 
+### 0.0.2
+- change branch deletion with $b_backup
+- Add cherry-pick input commit id
+- Add branch prompt user
+
 ### 0.0.1
 Initial release.
