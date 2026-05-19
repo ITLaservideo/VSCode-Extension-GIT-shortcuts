@@ -192,3 +192,7 @@ body {
 .hidden-inline-icons {
     display: none !important;
 }
+
+.more-info {
+    font-size: 10px;
+}

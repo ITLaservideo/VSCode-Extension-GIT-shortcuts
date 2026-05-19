@@ -166,7 +166,11 @@ export function activate(context: vscode.ExtensionContext) {
                         );
                         if (answer !== 'Delete') { return; }
                         terminal.show();
-                        terminal.sendText(`git branch -D ${b}`, true);
+                        terminal.sendText(`git branch -D ${b}_backup`, true);
+                        terminal.sendText(`git branch -m ${b} ${b}_backup`, true);
+                        terminal.sendText(`git checkout ${config['main-branch-name'] ?? 'main'}`, true);
+                        terminal.sendText(`git branch`, true);
+                        // terminal.sendText(`git branch -D ${b}`, true);
                         return;
                     }
 
@@ -192,11 +196,54 @@ export function activate(context: vscode.ExtensionContext) {
                     const def = defs[message.command];
                     if (def) {
                         terminal.show();
-                        if (def.text.startsWith("git branch -D")) {
-                            terminal.sendText(`git branch -D ${b}_backup`, true);
-                            terminal.sendText(`git branch -m ${b} ${b}_backup`, true);
-                        } else {
-                            terminal.sendText(def.text, def.run);
+                        switch (message.command) {
+                            case "branchDelete":
+                                vscode.window.showErrorMessage('Invalid branchDelete command.');
+                                break;
+                            case "cherryPick":
+                                terminal.sendText(def.text, false);
+                                let from_lipboard = '';
+                                try {
+                                    from_lipboard = `${(await (await vscode.env.clipboard.readText()) ?? '')}`.trim().match(/[0-9a-f]{7,40}/)?.at(0) ?? '';
+                                } catch (error) { }
+                                let commit_id = (await vscode.window.showInputBox({
+                                    title: 'Git Shortcuts: Cherry-Pick Commit',
+                                    prompt: 'Enter the commit ID to cherry-pick:',
+                                    value: from_lipboard,
+                                    ignoreFocusOut: true,
+                                }) ?? '').trim();
+                                if (commit_id.length === 0) { return; }
+                                if (commit_id.length > 40) {
+                                    commit_id = commit_id.substring(commit_id.length - 40);
+                                }
+                                if (/*not a valid commit ID */ !/^[0-9a-f]{7,40}$/i.test(commit_id)) {
+                                    vscode.window.showErrorMessage('Invalid commit ID.');
+                                    return;
+                                }
+                                terminal.sendText(`${commit_id}`, def.run);
+                                break;
+                            case 'resetHardPush':
+                                const branch_name_rhp = (await vscode.window.showInputBox({
+                                    title: 'Git Shortcuts: Hard Push',
+                                    prompt: 'Enter branch name:',
+                                    value: config['main-branch-name'] ?? 'main',
+                                    ignoreFocusOut: true,
+                                }) ?? '').trim();
+                                terminal.sendText(def.text.replace("main", branch_name_rhp), def.run);
+                                break;
+                            case 'resetHard':
+                                const branch_name_rh = (await vscode.window.showInputBox({
+                                    title: 'Git Shortcuts: Hard Push',
+                                    prompt: 'Enter branch name:',
+                                    value: config['main-branch-name'] ?? 'main',
+                                    ignoreFocusOut: true,
+                                }) ?? '').trim();
+                                terminal.sendText(def.text.replace("main", branch_name_rh), def.run);
+                                break;
+                            default:
+                                terminal.sendText(def.text, def.run);
+                                break;
+
                         }
                     }
                 } catch (err) {
