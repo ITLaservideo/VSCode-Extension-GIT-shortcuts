@@ -1,8 +1,12 @@
 # install
-`npm install -g @vscode/vsce`
+```bash
+npm install -g @vscode/vsce # install `vsce`
+npm install # download `node_modules`
+npm install typescript -g # install `tsc`
+code.cmd --version # verify using the vscode CLI
+```
 ```bash
   vsce package -o packaged.vsix # Generates a .vsix fileecho %CD%
-  code.cmd --version # verify using the vscode CLI
   code.cmd --install-extension packaged.vsix
 ```
 # Git Extension Wrap
@@ -36,13 +40,4 @@ Git for Windows. Adjust `git-exe` / `bash-exe` for portable or custom installs.
 ## Known Issues
 
 - Closing the main VS Code window does not close the detached window.
-
-## Release Notes
-
-### 0.0.2
-- change branch deletion with $b_backup
-- Add cherry-pick input commit id
-- Add branch prompt user
-
-### 0.0.1
-Initial release.
+- you can avoid prompt and go on with your bash commands, on confirm it writes the value inserted

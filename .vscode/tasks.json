@@ -4,7 +4,20 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Package & Install Extension",
+			"label": "Setup: Install Dependencies",
+			"type": "shell",
+			"command": "npm install -g @vscode/vsce && npm install && npm install typescript -g && code.cmd --version",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: Package & Install Extension",
 			"type": "shell",
 			"command": "vsce package -o packaged.vsix && code.cmd --install-extension packaged.vsix",
 			"options": {
