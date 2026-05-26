@@ -17,4 +17,5 @@ export const data = {
     , "discard local, match remote": "discard local, match remote"
     , "overwrite remote": "overwrite remote"
     , "import commit": "import commit"
+    , "permanently go to commit": "permanently go to commit"
 }
