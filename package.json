@@ -34,6 +34,12 @@
           "group": "navigation@100",
           "when": "explorerResourceIsFolder || !explorerResourceIsFolder"
         }
+      ],
+      "scm/title": [
+        {
+          "command": "gitextensionwrap.openGitBash",
+          "group": "navigation"
+        }
       ]
     }
   },
