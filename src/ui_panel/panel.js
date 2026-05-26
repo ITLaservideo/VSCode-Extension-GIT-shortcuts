@@ -5,6 +5,17 @@ document.body.appendChild(js_running);
 
 const vscode = acquireVsCodeApi();
 
+Locale.applyAll();
+
+const langSelect = document.getElementById('lang-select');
+if (langSelect) {
+    langSelect.value = Locale.lang;
+    langSelect.addEventListener('change', () => {
+        Locale.setLang(langSelect.value);
+        vscode.postMessage({ command: 'saveConfig', key: 'language', value: langSelect.value });
+    });
+}
+
 const buttonCommands = {
     'status-btn': 'status',
     'log-btn': 'log',
@@ -14,6 +25,8 @@ const buttonCommands = {
     'add-jpeg-btn': 'addJpeg',
     'rebase-interactive-btn': 'rebaseInteractive',
     'reset-hard-btn': 'resetHard',
+    'reset-soft-btn': 'resetSoft',
+    'reset-hard-commit-btn': 'resetHardCommit',
     'pull-btn': 'pull',
     'push-btn': 'push',
     'reset-hard-push-btn': 'resetHardPush',
@@ -31,6 +44,7 @@ for (const [id, command] of Object.entries(buttonCommands)) {
 
 const branchCommands = {
     'branch-delete-btn': 'branchDelete',
+    'branch-delete-fr-btn': 'branchDeleteForReal',
     'checkout-new-btn': 'checkoutNew',
     'checkout-btn': 'checkout',
     'log-to-file-btn': 'logToFile',

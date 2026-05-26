@@ -9,7 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
     //     vscode.window.showInformationMessage('GitShortcuts Extension Active!');
     // });
 
-    const gitBashDisposable = vscode.commands.registerCommand('gitextensionwrap.openGitBash', async (uri: vscode.Uri) => {
+    vscode.commands.registerCommand('gitextensionwrap.openGitBash', async (uri: vscode.Uri) => {
         let targetPath: string;
 
         if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
@@ -170,7 +170,18 @@ export function activate(context: vscode.ExtensionContext) {
                         terminal.sendText(`git branch -m ${b} ${b}_backup`, true);
                         terminal.sendText(`git checkout ${config['main-branch-name'] ?? 'main'}`, true);
                         terminal.sendText(`git branch`, true);
-                        // terminal.sendText(`git branch -D ${b}`, true);
+                        return;
+                    }
+
+                    if (message.command === 'branchDeleteForReal') {
+                        const answer = await vscode.window.showWarningMessage(
+                            `Delete branch "${b}"? No backup will be made.`,
+                            { modal: true },
+                            'Delete'
+                        );
+                        if (answer !== 'Delete') { return; }
+                        terminal.show();
+                        terminal.sendText(`git branch -D ${b}`, true);
                         return;
                     }
 
@@ -181,6 +192,8 @@ export function activate(context: vscode.ExtensionContext) {
                         addPng: { text: 'git add *.png', run: true },
                         addSvg: { text: 'git add *.svg', run: true },
                         addJpeg: { text: 'git add *.jpeg', run: true },
+                        resetSoft: { text: 'git reset --soft HEAD^', run: true },
+                        resetHardCommit: { text: 'git reset --hard ', run: false },
                         rebaseInteractive: { text: 'git rebase -i HEAD~', run: false },
                         resetHard: { text: 'git reset --hard origin/main', run: false },
                         resetHardPush: { text: 'git push origin main --force', run: false },
@@ -204,7 +217,7 @@ export function activate(context: vscode.ExtensionContext) {
                                 terminal.sendText(def.text, false);
                                 let from_lipboard = '';
                                 try {
-                                    from_lipboard = `${(await (await vscode.env.clipboard.readText()) ?? '')}`.trim().match(/[0-9a-f]{7,40}/)?.at(0) ?? '';
+                                    from_lipboard = `${(await vscode.env.clipboard.readText()) ?? ''}`.trim().match(/[0-9a-f]{7,40}/)?.at(0) ?? '';
                                 } catch (error) { }
                                 let commit_id = (await vscode.window.showInputBox({
                                     title: 'Git Shortcuts: Cherry-Pick Commit',
@@ -222,6 +235,28 @@ export function activate(context: vscode.ExtensionContext) {
                                 }
                                 terminal.sendText(`${commit_id}`, def.run);
                                 break;
+                            case 'resetHardCommit': {
+                                let rhc_clipboard = '';
+                                try {
+                                    rhc_clipboard = `${(await vscode.env.clipboard.readText()) ?? ''}`.trim().match(/[0-9a-f]{7,40}/)?.at(0) ?? '';
+                                } catch (_) { }
+                                let rhc_commit_id = (await vscode.window.showInputBox({
+                                    title: 'Git Shortcuts: Hard Reset to Commit',
+                                    prompt: 'Enter the commit ID to reset to:',
+                                    value: rhc_clipboard,
+                                    ignoreFocusOut: true,
+                                }) ?? '').trim();
+                                if (rhc_commit_id.length === 0) { return; }
+                                if (rhc_commit_id.length > 40) {
+                                    rhc_commit_id = rhc_commit_id.substring(rhc_commit_id.length - 40);
+                                }
+                                if (!/^[0-9a-f]{7,40}$/i.test(rhc_commit_id)) {
+                                    vscode.window.showErrorMessage('Invalid commit ID.');
+                                    return;
+                                }
+                                terminal.sendText(`${def.text}${rhc_commit_id}`, def.run);
+                                break;
+                            }
                             case 'resetHardPush':
                                 const branch_name_rhp = (await vscode.window.showInputBox({
                                     title: 'Git Shortcuts: Hard Push',
@@ -282,6 +317,7 @@ interface ExtConfig {
     'local-branch-name': string;
     'git-exe': string;
     'bash-exe': string;
+    'language': string;
 }
 
 const DEFAULT_CONFIG: ExtConfig = {
@@ -290,6 +326,7 @@ const DEFAULT_CONFIG: ExtConfig = {
     'local-branch-name': 'temporary-branch',
     'git-exe': 'C:\\Program Files\\Git\\cmd\\git.exe',
     'bash-exe': 'C:\\Program Files\\Git\\bin\\bash.exe',
+    'language': 'en',
 };
 
 function getConfigPath(workspacePath: string): string {
@@ -326,17 +363,53 @@ function saveConfig(workspacePath: string, key: string, value: string): void {
 
 // ── webview HTML ──────────────────────────────────────────────────────────────
 
+function getNonce(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let text = '';
+    for (let i = 0; i < 32; i++) { text += chars.charAt(Math.floor(Math.random() * chars.length)); }
+    return text;
+}
+
+function loadAllLocaleData(extensionUri: vscode.Uri): Record<string, Record<string, string>> {
+    const result: Record<string, Record<string, string>> = {};
+    for (const lang of ['en', 'it', 'de']) {
+        try {
+            const src = fs.readFileSync(
+                path.join(extensionUri.fsPath, 'src', 'ui_panel', 'locale', 'data', `${lang}.js`), 'utf8'
+            );
+            result[lang] = JSON.parse(src.replace(/^export\s+const\s+data\s*=\s*/, '').replace(/;\s*$/, '').trim());
+        } catch {
+            result[lang] = {};
+        }
+    }
+    return result;
+}
+
 function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, config: ExtConfig): string {
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'panel.css'));
     const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'panel.js'));
+    const localeUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'locale', 'locale.js'));
     const htmlPath = path.join(extensionUri.fsPath, '/src/ui_panel', 'panel.html');
 
+    const nonce = getNonce();
+    const language = config['language'] ?? 'en';
+    const localesJson = JSON.stringify(loadAllLocaleData(extensionUri))
+        .replace(/<\/script>/gi, '<\\/script>');
+    const localeDataScript = `<script nonce="${nonce}">window.__LOCALES__=${localesJson};window.__LOCALE_LANG__='${language}';</script>`;
+
+    const tokens: Record<string, string> = {
+        '{{cssUri}}': cssUri.toString(),
+        '{{jsUri}}': jsUri.toString(),
+        '{{localeUri}}': localeUri.toString(),
+        '{{cspSource}}': webview.cspSource,
+        '{{nonce}}': nonce,
+        '{{mainBranchName}}': config['main-branch-name'],
+        '{{localBranchName}}': config['local-branch-name'],
+        '{{localeDataScript}}': localeDataScript,
+    };
+
     return fs.readFileSync(htmlPath, 'utf8')
-        .replace('{{cssUri}}', cssUri.toString())
-        .replace('{{jsUri}}', jsUri.toString())
-        .replace(/\{\{cspSource\}\}/g, webview.cspSource)
-        .replace('{{mainBranchName}}', config['main-branch-name'])
-        .replace('{{localBranchName}}', config['local-branch-name']);
+        .replace(/\{\{[^}]+\}\}/g, (match) => tokens[match] ?? match);
 }
 
 export function deactivate() { }
