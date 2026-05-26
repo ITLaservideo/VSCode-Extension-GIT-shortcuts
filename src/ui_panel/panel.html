@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; style-src {{cspSource}}; script-src {{cspSource}};">
+        content="default-src 'none'; style-src {{cspSource}}; script-src {{cspSource}} 'nonce-{{nonce}}';">
     <link rel="stylesheet" href="{{cssUri}}">
     <title>Git Shortcuts</title>
 </head>
@@ -17,22 +17,29 @@
                 d="m640-480 80 80v80H520v240l-40 40-40-40v-240H240v-80l80-80v-280h-40v-80h400v80h-40v280Zm-286 80h252l-46-46v-314H400v314l-46 46Zm126 0Z" />
         </symbol>
     </svg>
+    <div class="toolbar">
+        <span class="lang-label" data-i18n="Language">Language</span>
+        <select class="lang-select" id="lang-select">
+            <option value="en">English</option>
+            <option value="it">Italiano</option>
+            <option value="de">Deutsch</option>
+        </select>
+    </div>
     <div class="grid">
         <div class="card">
-            <div class="card-title">Info</div>
+            <div class="card-title" data-i18n="Info">Info</div>
             <button class="btn" id="status-btn">git status</button>
-            <!-- <button class="btn" id="log-btn">git log &gt; main</button> -->
             <button class="btn" id="branch-btn">git branch</button>
         </div>
 
         <div class="card">
-            <div class="card-title">Sync</div>
+            <div class="card-title" data-i18n="Sync">Sync</div>
             <button class="btn" id="pull-btn">git pull</button>
             <button class="btn" id="push-btn">git push</button>
         </div>
         <div class="card-row">
             <div class="card">
-                <div class="card-title">Main branch</div>
+                <div class="card-title" data-i18n="Main branch">Main branch</div>
                 <div class="input-row">
                     <input class="branch-input" id="main-branch-name" type="text" placeholder="main branch name"
                         value="{{mainBranchName}}" spellcheck="false" />
@@ -40,11 +47,11 @@
                             <use href="#icon-save" />
                         </svg></button>
                 </div>
+                <button class="btn" id="main-checkout-btn">git checkout <span class="more-info" data-i18n="go to">(go to)</span></button>
                 <button class="btn" id="main-log-to-file-btn">git log &gt;</button>
-                <button class="btn" id="main-checkout-btn">git checkout</button>
             </div>
-            <div class="card" style="width: 180px;    max-width: 180px;">
-                <div class="card-title">Branch</div>
+            <div class="card" style="width: 180px; max-width: 180px;">
+                <div class="card-title" data-i18n="Branch">Branch</div>
                 <div class="input-row">
                     <input class="branch-input" id="branch-name" type="text" placeholder="branch name"
                         value="{{localBranchName}}" spellcheck="false" />
@@ -52,27 +59,36 @@
                             <use href="#icon-save" />
                         </svg></button>
                 </div>
-                <button class="btn" id="checkout-btn">git checkout</button>
+                <button class="btn" id="checkout-btn">git checkout <span class="more-info" data-i18n="go to">(go to)</span></button>
                 <button class="btn" id="log-to-file-btn">git log &gt;</button>
-                <button class="btn" id="checkout-new-btn">git checkout -b <span class="more-info">(crea il branch)</span></button>
-                <button class="btn" id="branch-delete-btn">git branch -D <span class="more-info">(elimina & do backup)</span></button>
+                <button class="btn" id="checkout-new-btn">git checkout -b <span class="more-info" data-i18n="create branch">(create branch)</span></button>
+                <button class="btn" id="branch-delete-btn">git branch -D, -m <span class="more-info" data-i18n="delete & do backup">(delete &amp; do backup)</span></button>
+                <button class="btn" id="branch-delete-fr-btn">git branch -D <span class="more-info" data-i18n="delete branch">(delete branch)</span></button>
             </div>
         </div>
         <div class="card">
-            <div class="card-title">Stage by type</div>
+            <div class="card-title" data-i18n="Stage by type">Stage by type</div>
             <button class="btn" id="add-png-btn">git add *.png</button>
             <button class="btn" id="add-svg-btn">git add *.svg</button>
             <button class="btn" id="add-jpeg-btn">git add *.jpeg</button>
         </div>
 
         <div class="card">
-            <div class="card-title">Danger — types only</div>
-            <button class="btn type-only" id="rebase-interactive-btn">git rebase -i HEAD~</button>
-            <button class="btn type-only" id="reset-hard-btn">git reset --hard origin/main</button>
-            <button class="btn type-only" id="reset-hard-push-btn">git push origin main --force</button>
-            <button class="btn type-only" id="cherry-pick-btn">git cherry-pick</button>
+            <div class="card-title" data-i18n="Commits">Commits</div>
+            <button class="btn" id="reset-soft-btn">git reset --soft HEAD^ <span class="more-info" data-i18n="undo commit, keep modifying">(undo commit, keep modifying)</span></button>
+            <button class="btn type-only" id="reset-hard-commit-btn">git reset --hard <span class="more-info">&lt;commit_id&gt;</span> <span class="more-info" data-i18n="delete previous commits">(delete previous commits)</span></button>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="Danger — types only">Danger — types only</div>
+            <button class="btn type-only" id="rebase-interactive-btn">git rebase -i HEAD~ <span class="more-info" data-i18n="merge X commits">(merge X commits)</span></button>
+            <button class="btn type-only" id="reset-hard-btn">git reset --hard origin/<span class="more-info">&lt;branch_name&gt;</span> <span class="more-info" data-i18n="discard local, match remote">(discard local, match remote)</span></button>
+            <button class="btn type-only" id="reset-hard-push-btn">git push origin <span class="more-info">&lt;branch_name&gt;</span> --force <span class="more-info" data-i18n="overwrite remote">(overwrite remote)</span></button>
+            <button class="btn type-only" id="cherry-pick-btn">git cherry-pick <span class="more-info">&lt;commit_id&gt;</span> <span class="more-info" data-i18n="import commit">(import commit)</span></button>
         </div>
     </div>
+    {{localeDataScript}}
+    <script src="{{localeUri}}"></script>
     <script src="{{jsUri}}"></script>
 </body>
 
