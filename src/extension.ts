@@ -396,6 +396,8 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, co
     const localesJson = JSON.stringify(loadAllLocaleData(extensionUri))
         .replace(/<\/script>/gi, '<\\/script>');
     const localeDataScript = `<script nonce="${nonce}">window.__LOCALES__=${localesJson};window.__LOCALE_LANG__='${language}';</script>`;
+    const extensionVersion = JSON.parse(fs.readFileSync(path.join(extensionUri.fsPath, 'package.json'), 'utf8')).version ?? 'unknown';
+    const extensionVersionScript = `<script nonce="${nonce}">window.__EXTENSION_VERSION__='${extensionVersion.replace(/'/g, "\\'")}';</script>`;
 
     const tokens: Record<string, string> = {
         '{{cssUri}}': cssUri.toString(),
@@ -406,6 +408,7 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, co
         '{{mainBranchName}}': config['main-branch-name'],
         '{{localBranchName}}': config['local-branch-name'],
         '{{localeDataScript}}': localeDataScript,
+        '{{extensionVersionScript}}': extensionVersionScript,
     };
 
     return fs.readFileSync(htmlPath, 'utf8')

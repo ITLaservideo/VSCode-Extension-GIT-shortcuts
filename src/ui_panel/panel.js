@@ -1,6 +1,7 @@
 const js_running = document.createElement("div");
 js_running.className = "js-running-check-ok";
-js_running.innerText = "js ✓";
+const extensionVersion = window.__EXTENSION_VERSION__ ?? 'unknown';
+js_running.innerText = `js v${extensionVersion} ✓`;
 document.body.appendChild(js_running);
 
 const vscode = acquireVsCodeApi();
