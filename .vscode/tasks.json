@@ -4,9 +4,73 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Setup: Install Dependencies",
+			"label": "Dependency: Install vsce globally",
 			"type": "shell",
-			"command": "npm install -g @vscode/vsce && npm install && npm install typescript -g && code.cmd --version",
+			"command": "npm install -g @vscode/vsce",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Dependency: Install local deps",
+			"type": "shell",
+			"command": "npm install",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": ["Dependency: Install vsce globally"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Dependency: Install typescript globally",
+			"type": "shell",
+			"command": "npm install typescript -g",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": ["Dependency: Install local deps"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Dependency: Check VS Code version",
+			"type": "shell",
+			"command": "code.cmd --version",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": ["Dependency: Install typescript globally"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: Install Dependencies",
+			"dependsOn": ["Dependency: Check VS Code version"],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: Package extension",
+			"type": "shell",
+			"command": "vsce package -o packaged.vsix",
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
@@ -19,10 +83,11 @@
 		{
 			"label": "Setup: Package & Install Extension",
 			"type": "shell",
-			"command": "vsce package -o packaged.vsix && code.cmd --install-extension packaged.vsix",
+			"command": "code.cmd --install-extension packaged.vsix",
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
+			"dependsOn": ["Setup: Package extension"],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
