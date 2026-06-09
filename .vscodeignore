@@ -1,9 +1,6 @@
 .vscode/**
 .vscode-test/**
-.claude/**
-.git-extension-wrap/**
 src/**
-!src/ui_panel/**
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -12,6 +9,10 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+!src/ui_panel/**
+.claude/**
+.git-extension-wrap/**
+.extension-always-learn/**
 main
 temporary-branch
-

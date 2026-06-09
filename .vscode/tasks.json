@@ -59,7 +59,7 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Setup: Install Dependencies",
+			"label": "☆ Setup: Install Dependencies",
 			"dependsOn": ["Dependency: Check VS Code version"],
 			"presentation": {
 				"reveal": "always",
@@ -68,7 +68,7 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Setup: Package extension",
+			"label": "Dependency: Package extension",
 			"type": "shell",
 			"command": "vsce package -o packaged.vsix",
 			"options": {
@@ -81,13 +81,13 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Setup: Package & Install Extension",
+			"label": "★ Setup: Package & Install Extension",
 			"type": "shell",
 			"command": "code.cmd --install-extension packaged.vsix",
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"dependsOn": ["Setup: Package extension"],
+			"dependsOn": ["Dependency: Package extension"],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
