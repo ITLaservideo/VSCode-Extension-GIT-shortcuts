@@ -4,4 +4,5 @@ node_modules
 .vscode-test/
 *.vsix
 .claude
-.git-extension-wrap/**
+# AlwaysLearn Extension
+.extension-always-learn/

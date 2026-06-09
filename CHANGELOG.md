@@ -1,4 +1,7 @@
 # Change Log
+## [0.0.4]
+
+- modularize extension settings
 
 ## [0.0.3] - 2026-05-26
 
