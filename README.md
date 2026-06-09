@@ -20,7 +20,7 @@ Right-click a folder → **Open Git Bash** — opens a dedicated window with a G
 
 ## Configuration
 
-`.git-extension-wrap/configuration.json` is created on first use:
+`.extension-always-learn/git-shortcuts.json` is created on first use:
 
 ```json
 {
