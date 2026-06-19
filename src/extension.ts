@@ -1,7 +1,19 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { execSync } from 'child_process';
 import { ExtConfig, logError, loadOrCreateConfig, saveConfig } from './local_configuration';
+
+function findExecutableInPath(name: string): string | undefined {
+    try {
+        const cmd = process.platform === 'win32' ? `where ${name}` : `which ${name}`;
+        const result = execSync(cmd, { encoding: 'utf8' }).trim();
+        return result.split('\n')[0].trim();
+    } catch (e) {
+        console.error(e);
+        return undefined;
+    }
+}
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "gitextensionwrap" is now active!');
@@ -44,23 +56,47 @@ export function activate(context: vscode.ExtensionContext) {
             }
             let maybe_shellPath = fs.existsSync(bashExe) ? bashExe : gitExe;
             if (!fs.existsSync(maybe_shellPath)) {
-                const newPath = await vscode.window.showInputBox({
-                    title: 'Git Shortcuts: Configure Executable Path',
-                    prompt: 'No valid git/bash executable found. Enter the path (must be absolute):',
-                    value: bashExe || gitExe,
-                    ignoreFocusOut: true,
-                });
-                if (newPath) {
-                    if (!fs.existsSync(newPath)) {
-                        vscode.window.showErrorMessage('Git Shortcuts: Provided path does not exist. Aborting.');
+                // 1. Try bash directly from PATH
+                let detected_bash_exe = findExecutableInPath('bash');
+                // 2. Derive bash from git's installation root (Git\cmd\git.exe → Git\bin\bash.exe)
+                if (!detected_bash_exe || !fs.existsSync(detected_bash_exe)) {
+                    const detected_git_exe = findExecutableInPath('git');
+                    if (detected_git_exe) {
+                        const gitRoot = path.dirname(path.dirname(detected_git_exe));
+                        for (const candidate of ['bin\\bash.exe', 'usr\\bin\\bash.exe']) {
+                            const p = path.join(gitRoot, candidate);
+                            if (fs.existsSync(p)) { detected_bash_exe = p; break; }
+                        }
+                        config['git-exe'] = detected_git_exe;
+                        saveConfig(targetPath, 'git-exe', detected_git_exe);
+                    }
+                }
+                if (detected_bash_exe && fs.existsSync(detected_bash_exe)) {
+                    maybe_shellPath = detected_bash_exe;
+                    config['bash-exe'] = detected_bash_exe;
+                    saveConfig(targetPath, 'bash-exe', detected_bash_exe);
+                } else {
+                    // 3. Ask user — must pick bash.exe from Git\bin
+                    const picked = await vscode.window.showOpenDialog({
+                        title: 'Git Shortcuts: Select bash.exe (inside Git\\bin)',
+                        openLabel: 'Select bash.exe',
+                        canSelectMany: false,
+                        canSelectFolders: false,
+                        filters: { 'bash.exe': ['exe'] },
+                        defaultUri: vscode.Uri.file('C:\\Program Files\\Git\\bin'),
+                    });
+                    const newPath = picked?.[0]?.fsPath;
+                    if (!newPath) {
+                        vscode.window.showErrorMessage('Git Shortcuts: No executable selected. Aborting.');
+                        return;
+                    }
+                    if (path.basename(newPath).toLowerCase() !== 'bash.exe') {
+                        vscode.window.showErrorMessage(`Git Shortcuts: Expected bash.exe but got "${path.basename(newPath)}". Aborting.`);
                         return;
                     }
                     config['bash-exe'] = newPath;
                     saveConfig(targetPath, 'bash-exe', newPath);
                     maybe_shellPath = newPath;
-                } else {
-                    vscode.window.showErrorMessage('Git Shortcuts: No executable path provided. Aborting.');
-                    return;
                 }
             }
             const shellPath = maybe_shellPath;
