@@ -2,6 +2,7 @@
 ## [0.0.4]
 
 - modularize extension settings
+- use OS to `find git\bin\bash.exe`
 
 ## [0.0.3] - 2026-05-26
 
