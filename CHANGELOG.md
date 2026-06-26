@@ -1,4 +1,10 @@
 # Change Log
+## [0.0.5] - 2026-06-26
+
+- Add Submodules card: `git submodule add`, `git submodule foreach git pull/push`
+- Submodule foreach buttons hidden when no `.gitmodules` found in workspace
+- Add `*.woff2`, `*.xaml`, `*.css` to "git add" card
+
 ## [0.0.4]
 
 - modularize extension settings

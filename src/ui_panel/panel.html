@@ -26,17 +26,30 @@
         </select>
     </div>
     <div class="grid">
-        <div class="card">
-            <div class="card-title" data-i18n="Info">Info</div>
-            <button class="btn" id="status-btn">git status</button>
-            <button class="btn" id="branch-btn">git branch</button>
+        <div class="card-row grid3_05_05_1">
+            <div class="card">
+                <div class="card-title" data-i18n="Info">Info</div>
+                <button class="btn" id="status-btn">git status</button>
+                <button class="btn" id="branch-btn">git branch</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title" data-i18n="Sync">Sync</div>
+                <button class="btn" id="pull-btn">git pull</button>
+                <button class="btn" id="push-btn">git push</button>
+            </div>
+
+            <div class="card grid3">
+                <div class="card-title" data-i18n="Stage by type">git add</div>
+                <button class="btn" id="add-png-btn">*.png</button>
+                <button class="btn" id="add-svg-btn">*.svg</button>
+                <button class="btn" id="add-jpeg-btn">*.jpeg</button>
+                <button class="btn" id="add-woff2-btn">*.woff2</button>
+                <button class="btn" id="add-xaml-btn">*.xaml</button>
+                <button class="btn" id="add-css-btn">*.css</button>
+            </div>
         </div>
 
-        <div class="card">
-            <div class="card-title" data-i18n="Sync">Sync</div>
-            <button class="btn" id="pull-btn">git pull</button>
-            <button class="btn" id="push-btn">git push</button>
-        </div>
         <div class="card-row">
             <div class="card">
                 <div class="card-title" data-i18n="Main branch">Main branch</div>
@@ -49,6 +62,12 @@
                 </div>
                 <button class="btn" id="main-checkout-btn">git checkout <span  class="more-info" data-i18n="go to"></span></button>
                 <button class="btn" id="main-log-to-file-btn">git log &gt;</button>
+                <div class="card">
+                    <div class="card-title" data-i18n="Submodules">Submodules</div>
+                    <button class="btn" id="submodule-add-btn">git submodule add <span class="more-info">&lt;repo-url&gt; &lt;path&gt;</span></button>
+                    <button class="btn" id="submodule-pull-btn" {{submoduleForeachHidden}}>git submodule foreach 🢖git pull</button>
+                    <button class="btn" id="submodule-push-btn" {{submoduleForeachHidden}}>git submodule foreach 🢖git push</button>
+                </div>
             </div>
             <div class="card" style="width: 180px; max-width: 180px;">
                 <div class="card-title" data-i18n="Branch">Branch</div>
@@ -79,13 +98,6 @@
             <button class="btn type-only" id="rebase-interactive-btn">git rebase -i HEAD~ <span  class="more-info" data-i18n="merge X commits"></span></button>
             <button class="btn type-only" id="reset-hard-btn">git reset --hard origin/<span class="more-info">&lt;branch_name&gt;</span> <span  class="more-info" data-i18n="discard local, match remote"></span></button>
             <button class="btn type-only" id="reset-hard-push-btn">git push origin <span class="more-info">&lt;branch_name&gt;</span> --force <span  class="more-info" data-i18n="overwrite remote"></span></button>
-        </div>
-
-        <div class="card">
-            <div class="card-title" data-i18n="Stage by type">Stage by type</div>
-            <button class="btn" id="add-png-btn">git add *.png</button>
-            <button class="btn" id="add-svg-btn">git add *.svg</button>
-            <button class="btn" id="add-jpeg-btn">git add *.jpeg</button>
         </div>
     </div>
     {{localeDataScript}}

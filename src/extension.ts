@@ -112,7 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
             );
 
             try {
-                the_panel_shortcuts.webview.html = getWebviewContent(the_panel_shortcuts.webview, context.extensionUri, config);
+                the_panel_shortcuts.webview.html = getWebviewContent(the_panel_shortcuts.webview, context.extensionUri, config, targetPath);
             } catch (err) {
                 logError(targetPath, 'getWebviewContent', err);
                 the_panel_shortcuts.webview.html = `<body style="color:red;font-family:sans-serif;padding:1em">
@@ -134,9 +134,9 @@ export function activate(context: vscode.ExtensionContext) {
                 location: { viewColumn: vscode.ViewColumn.Beside },
             });
             terminal.show();
-            await vscode.commands.executeCommand('workbench.action.terminal.fontZoomReset');
-            await vscode.commands.executeCommand('workbench.action.terminal.fontZoomOut');
-            await new Promise<void>(resolve => setTimeout(resolve, 500));
+            // await vscode.commands.executeCommand('workbench.action.terminal.fontZoomReset');
+            //await vscode.commands.executeCommand('workbench.action.terminal.fontZoomOut');
+            // await new Promise<void>(resolve => setTimeout(resolve, 500));
             // for (let i = 0; i < 10; i++) {
             //     await vscode.commands.executeCommand("workbench.action.increaseViewWidth");
             // }
@@ -149,7 +149,7 @@ export function activate(context: vscode.ExtensionContext) {
             async function closeAll() {
                 if (disposed) { return; }
                 disposed = true;
-                await vscode.commands.executeCommand('workbench.action.terminal.fontZoomReset');
+                // await vscode.commands.executeCommand('workbench.action.terminal.fontZoomReset');
                 terminal.dispose();
                 the_panel_shortcuts.dispose();
                 onTerminalClose.dispose();
@@ -229,6 +229,9 @@ export function activate(context: vscode.ExtensionContext) {
                         addPng: { text: 'git add *.png', run: true },
                         addSvg: { text: 'git add *.svg', run: true },
                         addJpeg: { text: 'git add *.jpeg', run: true },
+                        addWoff2: { text: 'git add *.woff2', run: true },
+                        addXaml: { text: 'git add *.xaml', run: true },
+                        addCss: { text: 'git add *.css', run: true },
                         resetSoft: { text: 'git reset --soft HEAD^', run: true },
                         resetHardCommit: { text: 'git reset --hard ', run: false },
                         rebaseInteractive: { text: 'git rebase -i HEAD~', run: false },
@@ -237,6 +240,9 @@ export function activate(context: vscode.ExtensionContext) {
                         cherryPick: { text: `git cherry-pick `, run: false },
                         pull: { text: 'git pull', run: true },
                         push: { text: 'git push', run: true },
+                        submoduleAdd: { text: 'git submodule add ', run: false },
+                        submodulePull: { text: `git submodule foreach 'git pull'`, run: true },
+                        submodulePush: { text: `git submodule foreach 'git push'`, run: true },
                         checkoutNew: { text: `git checkout -b ${b}`, run: true },
                         checkout: { text: `git checkout ${b}`, run: true },
                         logToFile: { text: `git log > ${b}`, run: true },
@@ -312,6 +318,22 @@ export function activate(context: vscode.ExtensionContext) {
                                 }) ?? '').trim();
                                 terminal.sendText(def.text.replace("main", branch_name_rh), def.run);
                                 break;
+                            case 'submoduleAdd': {
+                                const repoUrl = (await vscode.window.showInputBox({
+                                    title: 'Git Shortcuts: Add Submodule',
+                                    prompt: 'Enter the repository URL:',
+                                    ignoreFocusOut: true,
+                                }) ?? '').trim();
+                                if (!repoUrl) { return; }
+                                const subPath = (await vscode.window.showInputBox({
+                                    title: 'Git Shortcuts: Add Submodule',
+                                    prompt: 'Enter the local path/FolderName for the submodule:',
+                                    ignoreFocusOut: true,
+                                }) ?? '').trim();
+                                if (!subPath) { return; }
+                                terminal.sendText(`git submodule add ${repoUrl} ${subPath}`, true);
+                                break;
+                            }
                             default:
                                 terminal.sendText(def.text, def.run);
                                 break;
@@ -357,7 +379,7 @@ function loadAllLocaleData(extensionUri: vscode.Uri): Record<string, Record<stri
     return result;
 }
 
-function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, config: ExtConfig): string {
+function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, config: ExtConfig, workspacePath: string): string {
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'panel.css'));
     const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'panel.js'));
     const localeUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'locale', 'locale.js'));
@@ -381,6 +403,7 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, co
         '{{localBranchName}}': config['local-branch-name'],
         '{{localeDataScript}}': localeDataScript,
         '{{extensionVersionScript}}': extensionVersionScript,
+        '{{submoduleForeachHidden}}': fs.existsSync(path.join(workspacePath, '.gitmodules')) ? '' : 'hidden',
     };
 
     return fs.readFileSync(htmlPath, 'utf8')

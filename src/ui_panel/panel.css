@@ -92,6 +92,10 @@ body {
     }
 }
 
+.btn.compact {
+    width: fit-content;
+}
+
 .btn:last-child {
     margin-bottom: 0;
 }
@@ -211,7 +215,7 @@ body {
     align-items: flex-end;
     gap: 6px;
     margin-bottom: 6px;
-    position: absolute;
+    position: fixed;
     bottom: -1px;
     left: 11px;
     width: 67px;
@@ -260,6 +264,14 @@ body {
     }
 }
 
+#cherry-pick-btn {
+    background: rgba(60, 255, 0, 0.06);
+
+    &:hover {
+        background: rgba(72, 255, 0, 0.2);
+    }
+}
+
 .more-info[data-i18n] {
     &::before {
         content: '(';
@@ -268,4 +280,27 @@ body {
     &::after {
         content: ')';
     }
+}
+
+[hidden] {
+    display: none;
+}
+
+.grid3 {
+    display: grid;
+    justify-content: space-evenly;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding-top: 20px;
+    gap: 0px 5px;
+    align-items: start;
+
+    .card-title {
+        position: absolute;
+        top: 15px;
+    }
+}
+
+.grid3_05_05_1 {
+    display: grid;
+    grid-template-columns: 0.5fr 0.5fr 1fr;
 }
