@@ -18,4 +18,4 @@ export const data = {
     , "overwrite remote": "Remote überschreiben"
     , "import commit": "Commit importieren"
     , "permanently go to commit": "dauerhaft zum Commitment übergehen"
-}
+};
