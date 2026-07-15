@@ -4,6 +4,19 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"type": "npm",
+			"script": "watch",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
 			"label": "Dependency: Install vsce globally",
 			"type": "shell",
 			"command": "npm install -g @vscode/vsce",
@@ -23,7 +36,9 @@
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"dependsOn": ["Dependency: Install vsce globally"],
+			"dependsOn": [
+				"Dependency: Install vsce globally"
+			],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
@@ -37,7 +52,9 @@
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"dependsOn": ["Dependency: Install local deps"],
+			"dependsOn": [
+				"Dependency: Install local deps"
+			],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
@@ -51,7 +68,9 @@
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"dependsOn": ["Dependency: Install typescript globally"],
+			"dependsOn": [
+				"Dependency: Install typescript globally"
+			],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
@@ -60,7 +79,9 @@
 		},
 		{
 			"label": "☆ Setup: Install Dependencies",
-			"dependsOn": ["Dependency: Check VS Code version"],
+			"dependsOn": [
+				"Dependency: Check VS Code version"
+			],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
@@ -87,25 +108,14 @@
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"dependsOn": ["Dependency: Package extension"],
+			"dependsOn": [
+				"Dependency: Package extension"
+			],
 			"presentation": {
 				"reveal": "always",
 				"panel": "shared"
 			},
 			"problemMatcher": []
-		},
-		{
-			"type": "npm",
-			"script": "watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
-			"presentation": {
-				"reveal": "never"
-			},
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			}
 		}
 	]
 }

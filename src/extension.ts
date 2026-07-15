@@ -4,6 +4,10 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { ExtConfig, logError, loadOrCreateConfig, saveConfig } from './local_configuration';
 
+function toBashPath(p: string): string {
+    return p.replace(/\\/g, '/');
+}
+
 function findExecutableInPath(name: string): string | undefined {
     try {
         const cmd = process.platform === 'win32' ? `where ${name}` : `which ${name}`;
@@ -241,8 +245,10 @@ export function activate(context: vscode.ExtensionContext) {
                         pull: { text: 'git pull', run: true },
                         push: { text: 'git push', run: true },
                         submoduleAdd: { text: 'git submodule add ', run: false },
+                        cdSubmodule: { text: '', run: false },
                         submodulePull: { text: `git submodule foreach 'git pull'`, run: true },
                         submodulePush: { text: `git submodule foreach 'git push'`, run: true },
+                        cdWorkspace: { text: `cd "${toBashPath(targetPath)}"`, run: true },
                         checkoutNew: { text: `git checkout -b ${b}`, run: true },
                         checkout: { text: `git checkout ${b}`, run: true },
                         logToFile: { text: `git log > ${b}`, run: true },
@@ -318,6 +324,31 @@ export function activate(context: vscode.ExtensionContext) {
                                 }) ?? '').trim();
                                 terminal.sendText(def.text.replace("main", branch_name_rh), def.run);
                                 break;
+                            case 'cdSubmodule': {
+                                let submodulePaths: string[] = [];
+                                try {
+                                    const gitmodulesContent = fs.readFileSync(path.join(targetPath, '.gitmodules'), 'utf8');
+                                    submodulePaths = [...gitmodulesContent.matchAll(/^\s*path\s*=\s*(.+)$/gm)].map(m => m[1].trim());
+                                } catch (err) {
+                                    logError(targetPath, 'cdSubmodule', err);
+                                }
+                                if (submodulePaths.length === 0) {
+                                    vscode.window.showErrorMessage('Git Shortcuts: No submodules found in .gitmodules.');
+                                    return;
+                                }
+                                let chosenSubPath = submodulePaths[0];
+                                if (submodulePaths.length > 1) {
+                                    const picked = await vscode.window.showQuickPick(submodulePaths, {
+                                        title: 'Git Shortcuts: Select Submodule',
+                                        placeHolder: 'Choose a submodule to cd into',
+                                        ignoreFocusOut: true,
+                                    });
+                                    if (!picked) { return; }
+                                    chosenSubPath = picked;
+                                }
+                                terminal.sendText(`cd "${toBashPath(path.join(targetPath, chosenSubPath))}"`, true);
+                                break;
+                            }
                             case 'submoduleAdd': {
                                 const repoUrl = (await vscode.window.showInputBox({
                                     title: 'Git Shortcuts: Add Submodule',

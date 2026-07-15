@@ -17,6 +17,15 @@ if (langSelect) {
     });
 }
 
+let chosenButton = document.getElementById("workspace-cd-btn");
+function markChosen(button) {
+    if (chosenButton) {
+        chosenButton.classList.remove('the-chosen-one');
+    }
+    chosenButton = button;
+    button.classList.add('the-chosen-one');
+}
+
 const buttonCommands = {
     'status-btn': 'status',
     'log-btn': 'log',
@@ -34,8 +43,10 @@ const buttonCommands = {
     'pull-btn': 'pull',
     'push-btn': 'push',
     'submodule-add-btn': 'submoduleAdd',
+    'submodule-cd-btn': 'cdSubmodule',
     'submodule-pull-btn': 'submodulePull',
     'submodule-push-btn': 'submodulePush',
+    'workspace-cd-btn': 'cdWorkspace',
     'reset-hard-push-btn': 'resetHardPush',
     'cherry-pick-btn': 'cherryPick',
 };
@@ -44,6 +55,9 @@ for (const [id, command] of Object.entries(buttonCommands)) {
     const button = document.getElementById(id);
     if (button) {
         button.addEventListener('click', () => {
+            if ((button.id ?? '').endsWith("-cd-btn")) {
+                markChosen(button);
+            }
             vscode.postMessage({ command });
         });
     }
@@ -91,6 +105,7 @@ for (const [id, command] of Object.entries(mainBranchCommands)) {
     const button = document.getElementById(id);
     if (button) {
         button.addEventListener('click', () => {
+            markChosen(button);
             const branchName = document.getElementById('main-branch-name').value;
             vscode.postMessage({ command, branchName });
         });
@@ -100,6 +115,7 @@ for (const [id, command] of Object.entries(branchCommands)) {
     const button = document.getElementById(id);
     if (button) {
         button.addEventListener('click', () => {
+            markChosen(button);
             const branchName = document.getElementById('branch-name').value;
 
             vscode.postMessage({ command, branchName });

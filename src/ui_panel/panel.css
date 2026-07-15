@@ -122,6 +122,11 @@ body {
     background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
+.btn.the-chosen-one {
+    box-shadow: inset 0 0 0 1px #2ecc71;
+    background-color: rgba(46, 204, 113, 0.25);
+}
+
 .input-row {
     display: flex;
     gap: 4px;
