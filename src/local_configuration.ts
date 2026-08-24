@@ -1,9 +1,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
+// import { execFileSync } from 'child_process';
 
 const folder_name_extension_settings = "extension-always-learn";
 const file_name_extension_settings = "git-shortcuts.json";
 const file_name_extension_error_log = "errors-git-shortcuts.log";
+
+function ensureHiddenDir(dirPath: string): void {
+    //const alreadyExisted = fs.existsSync(dirPath);
+    fs.mkdirSync(dirPath, { recursive: true });
+    return;
+    // if (!alreadyExisted && process.platform === 'win32') {
+    //     try {
+    //         :: make the folder hidden? nah, migration to vscode is becouse it shows every file, what's the point of hiding it?
+    //         execFileSync('attrib', ['+h', dirPath]);
+    //     } catch { /* ignore attrib failures */ }
+    // }
+}
 
 export interface ExtConfig {
     'info': string;
@@ -26,7 +39,7 @@ export const DEFAULT_CONFIG: ExtConfig = {
 export function logError(workspacePath: string, context: string, err: unknown): void {
     try {
         const logPath = path.join(workspacePath, `.${folder_name_extension_settings}`, file_name_extension_error_log);
-        fs.mkdirSync(path.dirname(logPath), { recursive: true });
+        ensureHiddenDir(path.dirname(logPath));
         const message = err instanceof Error
             ? `${err.message}\n${err.stack ?? ''}`
             : String(err);
@@ -41,7 +54,7 @@ export function getConfigPath(workspacePath: string): string {
 
 export function loadOrCreateConfig(workspacePath: string): ExtConfig {
     const configPath = getConfigPath(workspacePath);
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    ensureHiddenDir(path.dirname(configPath));
     if (!fs.existsSync(configPath)) {
         fs.writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 4), 'utf8');
         const gitignorePath = path.join(workspacePath, '.gitignore');
