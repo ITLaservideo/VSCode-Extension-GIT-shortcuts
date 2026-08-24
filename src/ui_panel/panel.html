@@ -5,26 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; style-src {{cspSource}}; script-src {{cspSource}} 'nonce-{{nonce}}';">
+        content="default-src 'none'; style-src {{cspSource}} 'unsafe-hashes' 'sha256-/uAJu74u5xVXg1o0rPNy33Hc2fxBQh/btht8PqSxqyU='; script-src {{cspSource}} 'nonce-{{nonce}}'; font-src {{cspSource}} data:;">
     <link rel="stylesheet" href="{{cssUri}}">
     <title>Git Shortcuts</title>
 </head>
 
-<body>
+<body style="opacity: 0;">
     <svg hidden class="hidden-inline-icons">
         <symbol id="icon-save" viewBox="0 -960 960 960">
             <path
                 d="m640-480 80 80v80H520v240l-40 40-40-40v-240H240v-80l80-80v-280h-40v-80h400v80h-40v280Zm-286 80h252l-46-46v-314H400v314l-46 46Zm126 0Z" />
         </symbol>
     </svg>
-    <div class="toolbar">
-        <!-- <span class="lang-label" data-i18n="Language">Language</span> -->
-        <select class="lang-select" id="lang-select">
-            <option value="en">English</option>
-            <option value="it">Italiano</option>
-            <option value="de">Deutsch</option>
-        </select>
-    </div>
+    <div class="toolbar"></div>
     <div class="grid">
         <div class="card-row grid3_05_05_1">
             <div class="card">
@@ -60,18 +53,25 @@
                             <use href="#icon-save" />
                         </svg></button>
                 </div>
-                <button class="btn" id="main-checkout-btn">git checkout <span  class="more-info" data-i18n="go to"></span></button>
+                <button class="btn" id="main-checkout-btn"><span class="more-info" data-i18n="go to"></span> git
+                    checkout </button>
                 <button class="btn" id="main-log-to-file-btn">git log &gt;</button>
                 <div class="card">
                     <div class="card-title" data-i18n="Submodules">Submodules</div>
-                    <button class="btn" id="submodule-add-btn">git submodule add <span class="more-info">&lt;repo-url&gt; &lt;path&gt;</span></button>
-                    <button class="btn" id="submodule-cd-btn" {{submoduleForeachHidden}}>cd <span class="more-info">$SubModulePath</span></button>
-                    <button class="btn the-chosen-one" id="workspace-cd-btn" {{submoduleForeachHidden}}>cd <span class="more-info">$WorkSpace</span></button>
-                    <button class="btn" id="submodule-pull-btn" {{submoduleForeachHidden}}>git submodule foreach 🢖git pull</button>
-                    <button class="btn" id="submodule-push-btn" {{submoduleForeachHidden}}>git submodule foreach 🢖git push</button>
+                    <button class="btn" id="submodule-add-btn">git submodule add <span
+                            class="more-info">&lt;repo-url&gt; &lt;path&gt;</span></button>
+                    <button class="btn" id="submodule-cd-btn" {{submoduleForeachHidden}}>cd&nbsp;<span
+                            class="more-info">$SubModulePath</span></button>
+                    <button class="btn the-chosen-one" id="workspace-cd-btn" {{submoduleForeachHidden}}>cd&nbsp;<span
+                            class="more-info">$WorkSpace</span></button>
+                    <!-- unreliably
+                     <button class="btn" id="submodule-pull-btn" {{submoduleForeachHidden}}>git submodule foreach 🢖git
+                        pull</button>
+                    <button class="btn" id="submodule-push-btn" {{submoduleForeachHidden}}>git submodule foreach 🢖git
+                        push</button> -->
                 </div>
             </div>
-            <div class="card" style="width: 180px; max-width: 180px;">
+            <div class="card">
                 <div class="card-title" data-i18n="Branch">Branch</div>
                 <div class="input-row">
                     <input class="branch-input" id="branch-name" type="text" placeholder="branch name"
@@ -80,26 +80,43 @@
                             <use href="#icon-save" />
                         </svg></button>
                 </div>
-                <button class="btn" id="checkout-btn">git checkout <span  class="more-info" data-i18n="go to"></span></button>
+                <button class="btn" id="checkout-btn"><span class="more-info" data-i18n="go to"></span> git checkout
+                </button>
                 <button class="btn" id="log-to-file-btn">git log &gt;</button>
-                <button class="btn" id="checkout-new-btn">git checkout -b <span  class="more-info" data-i18n="create branch"></span></button>
-                <button class="btn" id="branch-delete-btn">git branch -D, -m <span  class="more-info" data-i18n="delete & do backup"></span></button>
-                <button class="btn" id="branch-delete-fr-btn">git branch -D <span  class="more-info" data-i18n="delete branch"></span></button>
+                <button class="btn" id="checkout-new-btn"><span class="more-info" data-i18n="create branch"></span> git
+                    checkout -b </button>
+                <button class="btn" id="branch-delete-btn"><span class="more-info"
+                        data-i18n="delete & do backup"></span> git branch -D, -m </button>
+                <button class="btn" id="branch-delete-fr-btn"><span class="more-info" data-i18n="delete branch"></span>
+                    git branch -D </button>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-title" data-i18n="Commits">Commits</div>
-            <button class="btn" id="reset-soft-btn">git reset --soft HEAD^ <span  class="more-info" data-i18n="undo commit, keep modifying"></span></button>
-            <button class="btn type-only" id="reset-hard-commit-btn">git reset --hard <span class="more-info">&lt;commit_id&gt;</span> <span  class="more-info" data-i18n="permanently go to commit"></span></button>
+        <div class="card-row">
+            <div class="card">
+                <div class="card-title" data-i18n="Commits">Commits</div>
+                <button class="btn" id="reset-soft-btn"><span class="more-info"
+                        data-i18n="undo commit, keep modifying"></span> git reset --soft HEAD^ </button>
+                <button class="btn type-only" id="reset-hard-commit-btn"><span class="more-info"
+                        data-i18n="permanently go to commit"></span> git reset --hard <span
+                        class="more-info">&lt;commit_id&gt;</span> </button>
+            </div>
         </div>
-
-        <div class="card">
-            <div class="card-title" data-i18n="Danger — types only">Danger — types only</div>
-            <button class="btn type-only" id="cherry-pick-btn">git cherry-pick <span class="more-info">&lt;commit_id&gt;</span> <span  class="more-info" data-i18n="import commit"></span></button>
-            <button class="btn type-only" id="rebase-interactive-btn">git rebase -i HEAD~ <span  class="more-info" data-i18n="merge X commits"></span></button>
-            <button class="btn type-only" id="reset-hard-btn">git reset --hard origin/<span class="more-info">&lt;branch_name&gt;</span> <span  class="more-info" data-i18n="discard local, match remote"></span></button>
-            <button class="btn type-only" id="reset-hard-push-btn">git push origin <span class="more-info">&lt;branch_name&gt;</span> --force <span  class="more-info" data-i18n="overwrite remote"></span></button>
+        <div class="card-row">
+            <div class="card">
+                <div class="card-title" data-i18n="Danger — types only">Danger — types only</div>
+                <button class="btn type-only" id="cherry-pick-btn"><span class="more-info"
+                        data-i18n="import commit"></span> git cherry-pick <span
+                        class="more-info">&lt;commit_id&gt;</span> </button>
+                <button class="btn type-only" id="rebase-interactive-btn"><span class="more-info"
+                        data-i18n="merge X commits"></span> git rebase -i HEAD~ </button>
+                <button class="btn type-only" id="reset-hard-btn"><span class="more-info"
+                        data-i18n="discard local, match remote"></span> git reset --hard origin/<span
+                        class="more-info">&lt;branch_name&gt;</span> </button>
+                <button class="btn type-only" id="reset-hard-push-btn"><span class="more-info"
+                        data-i18n="overwrite remote"></span> git push origin <span
+                        class="more-info">&lt;branch_name&gt;</span> --force </button>
+            </div>
         </div>
     </div>
     {{localeDataScript}}
