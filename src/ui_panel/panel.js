@@ -27,6 +27,7 @@ const buttonCommands = {
     'add-woff2-btn': 'addWoff2',
     'add-xaml-btn': 'addXaml',
     'add-css-btn': 'addCss',
+    'add-min-btn': 'addMin',
     'rebase-interactive-btn': 'rebaseInteractive',
     'reset-hard-btn': 'resetHard',
     'reset-soft-btn': 'resetSoft',
@@ -272,5 +273,5 @@ if (toolbar) {
     toolbar.appendChild(langDropdown);
 }
 setTimeout(() => {
-    document.body.style.opacity='1';
+    document.body.style.opacity = '1';
 }, 150);
