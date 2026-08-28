@@ -236,6 +236,7 @@ export function activate(context: vscode.ExtensionContext) {
                         addWoff2: { text: 'git add *.woff2', run: true },
                         addXaml: { text: 'git add *.xaml', run: true },
                         addCss: { text: 'git add *.css', run: true },
+                        addMin: { text: 'git add *.min.*', run: true },
                         resetSoft: { text: 'git reset --soft HEAD^', run: true },
                         resetHardCommit: { text: 'git reset --hard ', run: false },
                         rebaseInteractive: { text: 'git rebase -i HEAD~', run: false },
