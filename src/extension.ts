@@ -383,7 +383,39 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    vscode.commands.registerCommand('gitextensionwrap.runPs1InTerminal', (uri?: vscode.Uri, uris?: vscode.Uri[]) => {
+        const targets = (uris && uris.length > 0 ? uris : [uri ?? vscode.window.activeTextEditor?.document.uri])
+            .filter((u): u is vscode.Uri => !!u && u.fsPath.toLowerCase().endsWith('.ps1'));
+        if (targets.length === 0) {
+            vscode.window.showErrorMessage('Git Shortcuts: no .ps1 file selected.');
+            return;
+        }
+
+        const terminal = getPowerShellTerminal(path.dirname(targets[0].fsPath));
+        terminal.show();
+        for (const t of targets) {
+            terminal.sendText(`Set-Location -LiteralPath ${psQuote(path.dirname(t.fsPath))}; & ${psQuote(t.fsPath)}`, true);
+        }
+    });
+
     // context.subscriptions.push(helloDisposable, gitBashDisposable);
+}
+
+// ── PowerShell runner ─────────────────────────────────────────────────────────
+
+const PS_TERMINAL_NAME = 'PowerShell Scripts';
+
+function psQuote(s: string): string {
+    return `'${s.replace(/'/g, "''")}'`;
+}
+
+function getPowerShellTerminal(cwd: string): vscode.Terminal {
+    const existing = vscode.window.terminals.find(t => t.name === PS_TERMINAL_NAME && t.exitStatus === undefined);
+    if (existing) { return existing; }
+
+    const shellPath = findExecutableInPath('pwsh')
+        ?? (process.platform === 'win32' ? 'powershell.exe' : 'pwsh');
+    return vscode.window.createTerminal({ name: PS_TERMINAL_NAME, shellPath, cwd });
 }
 
 
