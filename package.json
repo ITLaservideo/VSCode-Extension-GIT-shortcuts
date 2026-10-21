@@ -26,6 +26,10 @@
       {
         "command": "gitextensionwrap.openGitBash",
         "title": "Open Git Bash"
+      },
+      {
+        "command": "gitextensionwrap.runPs1InTerminal",
+        "title": "Run in terminal"
       }
     ],
     "menus": {
@@ -34,6 +38,17 @@
           "command": "gitextensionwrap.openGitBash",
           "group": "navigation@100",
           "when": "explorerResourceIsFolder || !explorerResourceIsFolder"
+        },
+        {
+          "command": "gitextensionwrap.runPs1InTerminal",
+          "group": "navigation@101",
+          "when": "resourceExtname == .ps1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "gitextensionwrap.runPs1InTerminal",
+          "when": "false"
         }
       ],
       "scm/title": [
