@@ -78,7 +78,7 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "☆ Setup: Install Dependencies",
+			"label": "☆ Setup: Check Dependencies",
 			"dependsOn": [
 				"Dependency: Check VS Code version"
 			],

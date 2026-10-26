@@ -42,7 +42,7 @@
         {
           "command": "gitextensionwrap.runPs1InTerminal",
           "group": "navigation@101",
-          "when": "resourceExtname == .ps1"
+          "when": "resourceExtname =~ /^\\.(ps1|bat)$/i"
         }
       ],
       "commandPalette": [
