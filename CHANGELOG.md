@@ -12,7 +12,7 @@
 
 ## [0.0.3] - 2026-05-26
 
-- Add "Setup: Install Dependencies" VS Code task
+- Add "Setup: Check Dependencies" VS Code task
 - Add locales
 - Add Commit commands
 

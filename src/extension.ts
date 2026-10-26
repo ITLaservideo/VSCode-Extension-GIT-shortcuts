@@ -385,9 +385,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('gitextensionwrap.runPs1InTerminal', (uri?: vscode.Uri, uris?: vscode.Uri[]) => {
         const targets = (uris && uris.length > 0 ? uris : [uri ?? vscode.window.activeTextEditor?.document.uri])
-            .filter((u): u is vscode.Uri => !!u && u.fsPath.toLowerCase().endsWith('.ps1'));
+            .filter((u): u is vscode.Uri => !!u && /\.(ps1|bat)$/i.test(u.fsPath));
         if (targets.length === 0) {
-            vscode.window.showErrorMessage('Git Shortcuts: no .ps1 file selected.');
+            vscode.window.showErrorMessage('Git Shortcuts: no .ps1 or .bat file selected.');
             return;
         }
 
