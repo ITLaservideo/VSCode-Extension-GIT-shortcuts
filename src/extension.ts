@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { ExtConfig, logError, loadOrCreateConfig, saveConfig } from './local_configuration';
 
 function toBashPath(p: string): string {
@@ -190,12 +190,28 @@ export function activate(context: vscode.ExtensionContext) {
             context.subscriptions.push({ dispose: closeAll });
             // --------------------------
 
-            the_panel_shortcuts.webview.onDidReceiveMessage(async (message: { command: string; branchName?: string; key?: string; value?: string }) => {
+            the_panel_shortcuts.webview.onDidReceiveMessage(async (message: { command: string; branchName?: string; key?: string; value?: string; text?: string; danger?: boolean }) => {
                 try {
                     const b = (message.branchName ?? '').trim();
 
                     if (message.command === 'saveConfig' && message.key) {
                         saveConfig(targetPath, message.key as keyof ExtConfig, message.value ?? '');
+                        return;
+                    }
+
+                    if (message.command === 'runGuideCommand') {
+                        const text = (message.text ?? '').trim();
+                        if (!text || /[\r\n]/.test(text)) { return; }
+                        if (message.danger) {
+                            const answer = await vscode.window.showWarningMessage(
+                                'Run this command? It rewrites history or overwrites the remote.',
+                                { modal: true, detail: text },
+                                'Run'
+                            );
+                            if (answer !== 'Run') { return; }
+                        }
+                        terminal.show();
+                        terminal.sendText(text, true);
                         return;
                     }
 
@@ -443,6 +459,22 @@ function loadAllLocaleData(extensionUri: vscode.Uri): Record<string, Record<stri
     return result;
 }
 
+/** stdout of a git command run in `cwd`, or '' if it fails (not a repo, no remote, git missing…). */
+function gitOutput(cwd: string, args: string[]): string {
+    try {
+        return execFileSync('git', args, {
+            cwd, encoding: 'utf8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim();
+    } catch {
+        return '';
+    }
+}
+
+function escapeHtmlAttr(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, config: ExtConfig, workspacePath: string): string {
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'panel.css'));
     const jsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, '/src/ui_panel', 'panel.js'));
@@ -468,6 +500,8 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri, co
         '{{localeDataScript}}': localeDataScript,
         '{{extensionVersionScript}}': extensionVersionScript,
         '{{submoduleForeachHidden}}': fs.existsSync(path.join(workspacePath, '.gitmodules')) ? '' : 'hidden',
+        '{{originUrl}}': escapeHtmlAttr(gitOutput(workspacePath, ['remote', 'get-url', 'origin'])),
+        '{{repoRoot}}': escapeHtmlAttr(gitOutput(workspacePath, ['rev-parse', '--show-toplevel']) || workspacePath),
     };
 
     return fs.readFileSync(htmlPath, 'utf8')

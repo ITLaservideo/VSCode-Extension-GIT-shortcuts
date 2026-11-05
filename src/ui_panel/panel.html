@@ -131,63 +131,123 @@
             <button class="modal-close" id="remove-file-history-close" title="Close (Esc)">&times;</button>
         </div>
         <div class="modal-body">
-            <p class="guide-warn">This <b>rewrites history</b>: every commit hash from the first commit containing
-                the file onwards changes, and you will have to <b>force-push</b>. Agree with your team first.</p>
+            <div class="guide-inputs">
+                <label for="guide-ph-path">path / pattern</label>
+                <input class="branch-input" id="guide-ph-path" data-ph-input="path" type="text"
+                    data-repo-root="{{repoRoot}}" placeholder="secrets/app.pfx  ·  bin/  ·  *.pfx"
+                    spellcheck="false" />
+                <label for="guide-ph-url">repo URL</label>
+                <input class="branch-input" id="guide-ph-url" data-ph-input="url" type="text"
+                    placeholder="https://… / git@…" value="{{originUrl}}" spellcheck="false" />
+            </div>
+            <p class="guide-hint">Path relative to the repo root, with <code>/</code> — a pasted absolute Windows
+                path inside the repo is converted automatically. <b>do it</b> runs the command in the Git Bash
+                terminal; commands that rewrite history or overwrite the remote ask for confirmation first.</p>
 
-            <h3>0. Back up</h3>
-            <p>Push or stash any pending work, then make a safety copy of the repository.</p>
-            <pre class="guide-code">git clone --mirror &lt;repo-url&gt; repo-backup.git</pre>
+            <div class="tabs" role="tablist">
+                <button class="tab active" role="tab" data-tab="tab-filter-repo">git filter-repo <span
+                        class="more-info">recommended</span></button>
+                <button class="tab" role="tab" data-tab="tab-filter-branch">git filter-branch <span
+                        class="more-info">built-in</span></button>
+                <button class="tab" role="tab" data-tab="tab-untrack">stop tracking only</button>
+            </div>
 
-            <h3>1. Rewrite history — <code>git filter-repo</code> (recommended)</h3>
-            <p>Fast and safe; officially recommended by git. Requires Python.</p>
-            <pre class="guide-code">pip install git-filter-repo</pre>
-            <p>Remove a single file (path relative to the repo root):</p>
-            <pre class="guide-code">git filter-repo --invert-paths --path path/to/file</pre>
-            <p>Remove a folder, or every file matching a pattern:</p>
-            <pre class="guide-code">git filter-repo --invert-paths --path path/to/folder/</pre>
-            <pre class="guide-code">git filter-repo --invert-paths --path-glob '*.pfx'</pre>
-            <p>If it refuses because the repo is not a fresh clone, add <code>--force</code> (you made a backup).
-                <br><code>filter-repo</code> removes the <code>origin</code> remote on purpose; add it back:</p>
-            <pre class="guide-code">git remote add origin &lt;repo-url&gt;</pre>
+            <!-- ── filter-repo ── -->
+            <div class="tab-panel active" role="tabpanel" id="tab-filter-repo">
+                <div data-include="tpl-warn-backup"></div>
 
-            <h3>1-bis. Alternative — <code>git filter-branch</code> (built-in, slower)</h3>
-            <p>No install needed. Works in both PowerShell and bash.</p>
-            <pre class="guide-code">git filter-branch --force --index-filter "git rm --cached --ignore-unmatch path/to/file" --prune-empty --tag-name-filter cat -- --all</pre>
-            <p>Then drop the backup refs and the old objects:</p>
-            <pre class="guide-code">git for-each-ref --format="delete %(refname)" refs/original | git update-ref --stdin</pre>
-            <pre class="guide-code">git reflog expire --expire=now --all</pre>
-            <pre class="guide-code">git gc --prune=now --aggressive</pre>
+                <h3>1. Install</h3>
+                <p>Fast and safe; officially recommended by git. Requires Python.</p>
+                <pre class="guide-code"><code>python -m pip install --user git-filter-repo</code></pre>
+                <p>The commands below use <code>python -m git_filter_repo</code>, which works even when pip's
+                    <code>Scripts</code> folder is not on PATH (<code>git: 'filter-repo' is not a git
+                    command</code>). If it is on PATH, <code>git filter-repo</code> is the same thing.</p>
 
-            <h3>2. Verify</h3>
-            <p>Should print nothing:</p>
-            <pre class="guide-code">git log --all --oneline -- path/to/file</pre>
+                <h3>2. Rewrite history</h3>
+                <p>A single file or a folder (end it with <code>/</code>):</p>
+                <pre class="guide-code" data-danger><code>python -m git_filter_repo --force --invert-paths --path <span class="ph" data-ph="path"></span></code></pre>
+                <p>Or every file matching a glob pattern (e.g. <code>*.pfx</code>):</p>
+                <pre class="guide-code" data-danger><code>python -m git_filter_repo --force --invert-paths --path-glob <span class="ph" data-ph="path"></span></code></pre>
+                <p><code>--force</code> skips the "not a fresh clone" refusal (you made a backup in step 0). It
+                    ends with a <code>git reset --hard</code>, so <b>uncommitted changes are lost</b>.<br>
+                    <code>filter-repo</code> removes the <code>origin</code> remote on purpose; add it back:</p>
+                <pre class="guide-code"><code>git remote add origin <span class="ph" data-ph="url"></span></code></pre>
 
-            <h3>3. Stop it from coming back</h3>
-            <p>If the file still exists on disk, add it to <code>.gitignore</code> and commit.</p>
-            <pre class="guide-code">git add .gitignore</pre>
-            <pre class="guide-code">git commit -m "ignore path/to/file"</pre>
+                <div data-include="tpl-after-rewrite"></div>
+            </div>
 
-            <h3>4. Force-push every branch and tag</h3>
-            <pre class="guide-code">git push origin --force --all</pre>
-            <pre class="guide-code">git push origin --force --tags</pre>
-            <p>Protected branches must be temporarily unprotected on the server (GitHub / GitLab / Azure DevOps).</p>
+            <!-- ── filter-branch ── -->
+            <div class="tab-panel" role="tabpanel" id="tab-filter-branch">
+                <div data-include="tpl-warn-backup"></div>
 
-            <h3>5. Afterwards</h3>
-            <ul>
-                <li>Every collaborator must <b>re-clone</b> (or <code>git fetch</code> +
-                    <code>git reset --hard origin/&lt;branch_name&gt;</code>). An old clone that pushes will bring the
-                    file back.</li>
-                <li>Forks, open pull requests and server caches can still hold the file — on GitHub/GitLab ask
-                    support to run garbage collection if it must really disappear.</li>
-                <li>If the file contained <b>passwords, keys or tokens: rotate them</b>. Once pushed, consider them
-                    leaked, regardless of the rewrite.</li>
-            </ul>
+                <h3>1. Rewrite history</h3>
+                <p>No install needed, but slow on big repos. Works for files and folders.</p>
+                <pre class="guide-code" data-danger><code>git filter-branch --force --index-filter "git rm -r --cached --ignore-unmatch <span class="ph" data-ph="path" data-in-dquote></span>" --prune-empty --tag-name-filter cat -- --all</code></pre>
 
-            <h3>Only stop tracking it (no history rewrite)</h3>
-            <p>Removes the file from the next commit but keeps it on disk; older commits still contain it.</p>
-            <pre class="guide-code">git rm --cached path/to/file</pre>
+                <h3>2. Drop the backup refs and the old objects</h3>
+                <pre class="guide-code" data-danger><code>git for-each-ref --format="delete %(refname)" refs/original | git update-ref --stdin</code></pre>
+                <pre class="guide-code" data-danger><code>git reflog expire --expire=now --all</code></pre>
+                <pre class="guide-code" data-danger><code>git gc --prune=now --aggressive</code></pre>
+
+                <div data-include="tpl-after-rewrite"></div>
+            </div>
+
+            <!-- ── stop tracking ── -->
+            <div class="tab-panel" role="tabpanel" id="tab-untrack">
+                <p class="guide-note">No history rewrite: the file is removed from the <b>next</b> commit but kept
+                    on disk. <b>Older commits still contain it</b> — use one of the other tabs if it must disappear
+                    completely.</p>
+
+                <h3>1. Remove it from the index</h3>
+                <pre class="guide-code"><code>git rm -r --cached <span class="ph" data-ph="path"></span></code></pre>
+
+                <h3>2. Ignore it</h3>
+                <pre class="guide-code"><code>echo <span class="ph" data-ph="path"></span> &gt;&gt; .gitignore</code></pre>
+                <pre class="guide-code"><code>git add .gitignore</code></pre>
+
+                <h3>3. Commit and push</h3>
+                <pre class="guide-code"><code>git commit -m "stop tracking removed file"</code></pre>
+                <pre class="guide-code"><code>git push</code></pre>
+            </div>
         </div>
     </div>
+
+    <template id="tpl-warn-backup">
+        <p class="guide-warn">This <b>rewrites history</b>: every commit hash from the first commit containing the
+            file onwards changes, and you will have to <b>force-push</b>. Agree with your team first.</p>
+
+        <h3>0. Back up</h3>
+        <p>Commit or stash pending work, then make a full local copy next to the repo:</p>
+        <pre class="guide-code"><code>git clone --mirror . ../repo-backup.git</code></pre>
+    </template>
+
+    <template id="tpl-after-rewrite">
+        <h3>3. Verify</h3>
+        <p>Should print nothing:</p>
+        <pre class="guide-code"><code>git log --all --oneline -- <span class="ph" data-ph="path"></span></code></pre>
+
+        <h3>4. Stop it from coming back</h3>
+        <p>If the file still exists on disk, ignore it:</p>
+        <pre class="guide-code"><code>echo <span class="ph" data-ph="path"></span> &gt;&gt; .gitignore</code></pre>
+        <pre class="guide-code"><code>git add .gitignore</code></pre>
+        <pre class="guide-code"><code>git commit -m "ignore removed file"</code></pre>
+
+        <h3>5. Force-push every branch and tag</h3>
+        <pre class="guide-code" data-danger><code>git push origin --force --all</code></pre>
+        <pre class="guide-code" data-danger><code>git push origin --force --tags</code></pre>
+        <p>Protected branches must be temporarily unprotected on the server (GitHub / GitLab / Azure DevOps).</p>
+
+        <h3>6. Afterwards</h3>
+        <ul>
+            <li>Every collaborator must <b>re-clone</b> (or <code>git fetch</code> +
+                <code>git reset --hard origin/&lt;branch_name&gt;</code>). An old clone that pushes will bring the
+                file back.</li>
+            <li>Forks, open pull requests and server caches can still hold the file — on GitHub/GitLab ask support
+                to run garbage collection if it must really disappear.</li>
+            <li>If the file contained <b>passwords, keys or tokens: rotate them</b>. Once pushed, consider them
+                leaked, regardless of the rewrite.</li>
+        </ul>
+    </template>
 
     {{localeDataScript}}
     {{extensionVersionScript}}

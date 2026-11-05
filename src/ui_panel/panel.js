@@ -136,12 +136,40 @@ function setupGuideModal(openBtnId, modalId, closeBtnId) {
         if (e.key === 'Escape' && modal.classList.contains('open')) { close(); }
     });
 
-    modal.querySelectorAll('.guide-code').forEach(pre => {
-        const text = pre.textContent.trim();
+    // shared sections: <div data-include="tpl-id"> → contents of <template id="tpl-id">
+    modal.querySelectorAll('[data-include]').forEach(slot => {
+        const tpl = document.getElementById(slot.dataset.include);
+        if (tpl instanceof HTMLTemplateElement) {
+            slot.replaceWith(tpl.content.cloneNode(true));
+        }
+    });
+
+    // tabs
+    const tabs = [...modal.querySelectorAll('.tab[data-tab]')];
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => {
+                const isActive = t === tab;
+                t.classList.toggle('active', isActive);
+                t.setAttribute('aria-selected', String(isActive));
+                document.getElementById(t.dataset.tab)?.classList.toggle('active', isActive);
+            });
+        });
+    });
+
+    // code blocks: copy + do it
+    const blocks = [...modal.querySelectorAll('.guide-code')];
+    const commandOf = (pre) => pre.querySelector('code')?.textContent.trim() ?? '';
+
+    blocks.forEach(pre => {
+        const actions = document.createElement('div');
+        actions.className = 'guide-actions';
+
         const copyBtn = document.createElement('button');
         copyBtn.className = 'guide-copy';
         copyBtn.textContent = 'copy';
         copyBtn.addEventListener('click', async () => {
+            const text = commandOf(pre);
             try {
                 await navigator.clipboard.writeText(text);
             } catch {
@@ -152,15 +180,84 @@ function setupGuideModal(openBtnId, modalId, closeBtnId) {
                 document.execCommand('copy');
                 ta.remove();
             }
-            copyBtn.textContent = 'copied ✓';
-            copyBtn.classList.add('copied');
-            setTimeout(() => {
-                copyBtn.textContent = 'copy';
-                copyBtn.classList.remove('copied');
-            }, 1200);
+            flash(copyBtn, 'copied ✓', 'copy');
         });
-        pre.appendChild(copyBtn);
+
+        const runBtn = document.createElement('button');
+        runBtn.className = 'guide-run';
+        runBtn.textContent = 'do it';
+        if (pre.hasAttribute('data-danger')) {
+            runBtn.classList.add('danger');
+        }
+        runBtn.addEventListener('click', () => {
+            if (runBtn.disabled) { return; }
+            vscode.postMessage({
+                command: 'runGuideCommand',
+                text: commandOf(pre),
+                danger: pre.hasAttribute('data-danger'),
+            });
+            flash(runBtn, 'sent ✓', 'do it');
+        });
+
+        actions.append(copyBtn, runBtn);
+        pre.appendChild(actions);
     });
+
+    // placeholders: <span class="ph" data-ph="x"> ← <input data-ph-input="x">
+    const inputs = [...modal.querySelectorAll('[data-ph-input]')];
+    const refresh = () => {
+        for (const input of inputs) {
+            let value = input.value.trim();
+            if (input.dataset.repoRoot !== undefined) {
+                value = toRepoRelative(value, input.dataset.repoRoot);
+            }
+            modal.querySelectorAll(`.ph[data-ph="${input.dataset.phInput}"]`).forEach(ph => {
+                let text = value ? bashQuote(value) : `<${input.dataset.phInput}>`;
+                if (value && ph.hasAttribute('data-in-dquote')) {
+                    // sits inside "…" - the outer shell must not expand $, `, \ or end the string on "
+                    text = text.replace(/[\\"$`]/g, '\\$&');
+                }
+                ph.textContent = text;
+                ph.classList.toggle('ph-empty', !value);
+            });
+        }
+        blocks.forEach(pre => {
+            const runBtn = pre.querySelector('.guide-run');
+            const missing = pre.querySelector('.ph-empty');
+            runBtn.disabled = !!missing;
+            runBtn.title = missing ? `fill in "${missing.dataset.ph}" above first` : 'run in the terminal';
+        });
+    };
+    inputs.forEach(input => input.addEventListener('input', refresh));
+    refresh();
+}
+
+/**
+ * git paths are repo-relative with `/`: `C:\repo\src\a.js` (or `"C:\repo\src\a.js"` from
+ * "Copy as path") → `src/a.js`. Paths outside the repo are left as they are.
+ */
+function toRepoRelative(value, repoRoot) {
+    let p = value.replace(/^(["'])(.*)\1$/, '$2').replace(/\\/g, '/');
+    const root = (repoRoot ?? '').replace(/\\/g, '/').replace(/\/+$/, '');
+    if (root && p.toLowerCase().startsWith(root.toLowerCase() + '/')) {
+        p = p.slice(root.length + 1);
+    }
+    return p.replace(/^(\.\/)+/, '');
+}
+
+/** Leaves simple tokens as they are, single-quotes anything else (spaces, globs, `$`, quotes…). */
+function bashQuote(value) {
+    if (/^[A-Za-z0-9._\/@:+=,-]+$/.test(value)) { return value; }
+    return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
+function flash(button, text, restoreText) {
+    button.textContent = text;
+    button.classList.add('flashed');
+    setTimeout(() => {
+        button.textContent = restoreText;
+        button.classList.remove('flashed');
+    }, 1200);
 }
 
 setupGuideModal('remove-file-history-btn', 'remove-file-history-modal', 'remove-file-history-close');
