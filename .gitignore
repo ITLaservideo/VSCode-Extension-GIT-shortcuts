@@ -6,3 +6,4 @@ node_modules
 .claude
 # AlwaysLearn Extension
 .extension-always-learn/
+*.min.*

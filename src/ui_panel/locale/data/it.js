@@ -18,4 +18,6 @@ export const data = {
     , "overwrite remote": "sovrascrivi remoto"
     , "import commit": "importa commit"
     , "permanently go to commit": "vai permanentemente a commit"
+    , "guide: remove file from history": "guida: rimuovi file dalla cronologia"
+    , "Remove a file from git history": "Rimuovere un file dalla cronologia git"
 };

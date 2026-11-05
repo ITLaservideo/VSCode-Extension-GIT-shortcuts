@@ -114,6 +114,57 @@ for (const [id, command] of Object.entries(branchCommands)) {
         });
     }
 }
+function setupGuideModal(openBtnId, modalId, closeBtnId) {
+    const openBtn = document.getElementById(openBtnId);
+    const modal = document.getElementById(modalId);
+    const closeBtn = document.getElementById(closeBtnId);
+    if (!openBtn || !modal) { return; }
+
+    const open = () => {
+        modal.classList.add('open');
+        modal.querySelector('.modal-body')?.scrollTo(0, 0);
+        closeBtn?.focus();
+    };
+    const close = () => {
+        modal.classList.remove('open');
+        openBtn.focus();
+    };
+
+    openBtn.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('open')) { close(); }
+    });
+
+    modal.querySelectorAll('.guide-code').forEach(pre => {
+        const text = pre.textContent.trim();
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'guide-copy';
+        copyBtn.textContent = 'copy';
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+            }
+            copyBtn.textContent = 'copied ✓';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+                copyBtn.textContent = 'copy';
+                copyBtn.classList.remove('copied');
+            }, 1200);
+        });
+        pre.appendChild(copyBtn);
+    });
+}
+
+setupGuideModal('remove-file-history-btn', 'remove-file-history-modal', 'remove-file-history-close');
+
 class MockUiBuilder {
     /**
      * Builds a custom dropdown selector (not a native `<select>`): a clickable "selected" label
