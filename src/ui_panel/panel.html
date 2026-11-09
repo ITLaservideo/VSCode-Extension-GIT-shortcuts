@@ -137,8 +137,13 @@
                     data-repo-root="{{repoRoot}}" placeholder="secrets/app.pfx  ·  bin/  ·  *.pfx"
                     spellcheck="false" />
                 <label for="guide-ph-url">repo URL</label>
-                <input class="branch-input" id="guide-ph-url" data-ph-input="url" type="text"
-                    placeholder="https://… / git@…" value="{{originUrl}}" spellcheck="false" />
+                <div class="guide-input-row">
+                    <input class="branch-input" id="guide-ph-url" data-ph-input="url" type="text"
+                        placeholder="https://… / git@…" value="{{originUrl}}" spellcheck="false" />
+                    <button class="guide-run danger" id="remote-remove-origin-btn"
+                        title="git remote remove origin — asks for confirmation and shows which repository (top-level or submodule) it acts on">git
+                        remote remove origin</button>
+                </div>
             </div>
             <p class="guide-hint">Path relative to the repo root, with <code>/</code> — a pasted absolute Windows
                 path inside the repo is converted automatically. <b>do it</b> runs the command in the Git Bash
@@ -232,8 +237,12 @@
         <pre class="guide-code"><code>git add .gitignore</code></pre>
         <pre class="guide-code"><code>git commit -m "ignore removed file"</code></pre>
 
-        <h3>5. Force-push every branch and tag</h3>
+        <h3>5. Force-push</h3>
+        <p>Only the current branch (sets its upstream again, which removing <code>origin</code> dropped):</p>
+        <pre class="guide-code" data-danger><code>git push origin HEAD --force -u</code></pre>
+        <p>Or every local branch — also pushes local-only branches that may not belong on the remote:</p>
         <pre class="guide-code" data-danger><code>git push origin --force --all</code></pre>
+        <p>Tags (every local tag):</p>
         <pre class="guide-code" data-danger><code>git push origin --force --tags</code></pre>
         <p>Protected branches must be temporarily unprotected on the server (GitHub / GitLab / Azure DevOps).</p>
 

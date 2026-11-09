@@ -596,6 +596,22 @@ body:has(.modal.open) {
     }
 }
 
+.guide-input-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+
+    .branch-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .guide-run {
+        padding: 3px 6px;
+    }
+}
+
 .guide-hint {
     font-size: 11px;
     color: var(--vscode-descriptionForeground);

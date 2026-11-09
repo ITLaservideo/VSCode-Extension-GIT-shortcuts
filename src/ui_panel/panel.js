@@ -203,6 +203,12 @@ function setupGuideModal(openBtnId, modalId, closeBtnId) {
         pre.appendChild(actions);
     });
 
+    // git remote remove origin - the extension confirms which repository it acts on
+    const removeOriginBtn = modal.querySelector('#remote-remove-origin-btn');
+    removeOriginBtn?.addEventListener('click', () => {
+        vscode.postMessage({ command: 'remoteRemoveOrigin' });
+    });
+
     // placeholders: <span class="ph" data-ph="x"> ← <input data-ph-input="x">
     const inputs = [...modal.querySelectorAll('[data-ph-input]')];
     const refresh = () => {

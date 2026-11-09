@@ -8,6 +8,11 @@ function toBashPath(p: string): string {
     return p.replace(/\\/g, '/');
 }
 
+/** single-quote for bash: `it's` → `'it'\''s'` */
+function bashQuote(s: string): string {
+    return `'${s.replace(/'/g, `'\\''`)}'`;
+}
+
 function findExecutableInPath(name: string): string | undefined {
     try {
         const cmd = process.platform === 'win32' ? `where ${name}` : `which ${name}`;
@@ -212,6 +217,45 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                         terminal.show();
                         terminal.sendText(text, true);
+                        return;
+                    }
+
+                    if (message.command === 'remoteRemoveOrigin') {
+                        // act on the repo the terminal is in (it may have cd'ed into a submodule)
+                        // Git Bash may report its cwd as /c/foo → C:/foo
+                        const cwd = (terminal.shellIntegration?.cwd?.fsPath ?? targetPath)
+                            .replace(/^[\\/]([a-z])(?=[\\/]|$)/i, '$1:');
+                        const repo = gitOutput(cwd, ['rev-parse', '--show-toplevel']);
+                        if (!repo) {
+                            vscode.window.showErrorMessage(`Git Shortcuts: "${cwd}" is not inside a git repository.`);
+                            return;
+                        }
+                        const originUrl = gitOutput(repo, ['remote', 'get-url', 'origin']);
+                        if (!originUrl) {
+                            vscode.window.showInformationMessage(`Git Shortcuts: no "origin" remote in "${repo}" — nothing to remove.`);
+                            return;
+                        }
+                        const superproject = gitOutput(repo, ['rev-parse', '--show-superproject-working-tree']);
+                        const submodules = gitOutput(repo, ['config', '--file', '.gitmodules', '--get-regexp', '\\.path$'])
+                            .split('\n').filter(Boolean).length;
+                        const kind = superproject
+                            ? `SUBMODULE of ${superproject}`
+                            : 'top-level repository' + (submodules
+                                ? ` (has ${submodules} submodule${submodules === 1 ? '' : 's'} — their remotes are not touched)`
+                                : '');
+                        const command = `git -C ${bashQuote(toBashPath(repo))} remote remove origin`;
+                        const answer = await vscode.window.showWarningMessage(
+                            'Remove the "origin" remote from this repository?',
+                            {
+                                modal: true,
+                                detail: `Repository: ${repo}\nType: ${kind}\norigin: ${originUrl}\n\n${command}`,
+                            },
+                            'Remove origin'
+                        );
+                        if (answer !== 'Remove origin') { return; }
+                        terminal.show();
+                        terminal.sendText(command, true);
+                        terminal.sendText(`git -C ${bashQuote(toBashPath(repo))} remote -v`, true);
                         return;
                     }
 
