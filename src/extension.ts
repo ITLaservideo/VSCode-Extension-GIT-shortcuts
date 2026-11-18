@@ -13,15 +13,31 @@ function bashQuote(s: string): string {
     return `'${s.replace(/'/g, `'\\''`)}'`;
 }
 
-function findExecutableInPath(name: string): string | undefined {
+/** All matches of `name` on PATH, in PATH order (`where` on Windows can return several). */
+function findAllInPath(name: string): string[] {
     try {
-        const cmd = process.platform === 'win32' ? `where ${name}` : `which ${name}`;
-        const result = execSync(cmd, { encoding: 'utf8' }).trim();
-        return result.split('\n')[0].trim();
-    } catch (e) {
-        console.error(e);
-        return undefined;
+        const cmd = process.platform === 'win32' ? `where ${name}` : `which -a ${name}`;
+        return execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+            .split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    } catch {
+        return [];
     }
+}
+
+function findExecutableInPath(name: string): string | undefined {
+    return findAllInPath(name)[0];
+}
+
+/** True for the WSL launcher (C:\Windows\System32\bash.exe, WindowsApps\bash.exe) — not Git Bash. */
+function isWslBash(p: string): boolean {
+    if (process.platform !== 'win32') { return false; }
+    const lower = path.normalize(p).toLowerCase();
+    const sysRoot = path.normalize(process.env.SystemRoot ?? 'C:\\Windows').toLowerCase();
+    return lower.startsWith(sysRoot + path.sep) || lower.includes(`${path.sep}windowsapps${path.sep}`);
+}
+
+function isUsableBash(p: string | undefined): p is string {
+    return !!p && fs.existsSync(p) && !isWslBash(p);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -63,24 +79,28 @@ export function activate(context: vscode.ExtensionContext) {
                 the_vscode_diff = vscode.window.tabGroups.activeTabGroup.activeTab ?? null;
                 // await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
             }
-            let maybe_shellPath = fs.existsSync(bashExe) ? bashExe : gitExe;
-            if (!fs.existsSync(maybe_shellPath)) {
-                // 1. Try bash directly from PATH
-                let detected_bash_exe = findExecutableInPath('bash');
+            let maybe_shellPath = isUsableBash(bashExe) ? bashExe : '';
+            if (!maybe_shellPath) {
+                // 1. Try bash from PATH, skipping the WSL launcher (System32\bash.exe)
+                let detected_bash_exe = findAllInPath('bash').find(isUsableBash);
                 // 2. Derive bash from git's installation root (Git\cmd\git.exe → Git\bin\bash.exe)
-                if (!detected_bash_exe || !fs.existsSync(detected_bash_exe)) {
-                    const detected_git_exe = findExecutableInPath('git');
-                    if (detected_git_exe) {
+                if (!detected_bash_exe) {
+                    const gitCandidates = [gitExe, ...findAllInPath('git')].filter(g => !!g && fs.existsSync(g));
+                    for (const detected_git_exe of gitCandidates) {
                         const gitRoot = path.dirname(path.dirname(detected_git_exe));
-                        for (const candidate of ['bin\\bash.exe', 'usr\\bin\\bash.exe']) {
-                            const p = path.join(gitRoot, candidate);
-                            if (fs.existsSync(p)) { detected_bash_exe = p; break; }
+                        detected_bash_exe = ['bin\\bash.exe', 'usr\\bin\\bash.exe']
+                            .map(c => path.join(gitRoot, c))
+                            .find(isUsableBash);
+                        if (detected_bash_exe) {
+                            if (detected_git_exe !== gitExe) {
+                                config['git-exe'] = detected_git_exe;
+                                saveConfig(targetPath, 'git-exe', detected_git_exe);
+                            }
+                            break;
                         }
-                        config['git-exe'] = detected_git_exe;
-                        saveConfig(targetPath, 'git-exe', detected_git_exe);
                     }
                 }
-                if (detected_bash_exe && fs.existsSync(detected_bash_exe)) {
+                if (detected_bash_exe) {
                     maybe_shellPath = detected_bash_exe;
                     config['bash-exe'] = detected_bash_exe;
                     saveConfig(targetPath, 'bash-exe', detected_bash_exe);
@@ -101,6 +121,10 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                     if (path.basename(newPath).toLowerCase() !== 'bash.exe') {
                         vscode.window.showErrorMessage(`Git Shortcuts: Expected bash.exe but got "${path.basename(newPath)}". Aborting.`);
+                        return;
+                    }
+                    if (isWslBash(newPath)) {
+                        vscode.window.showErrorMessage('Git Shortcuts: that bash.exe is the WSL launcher, not Git Bash. Pick the one inside Git\\bin. Aborting.');
                         return;
                     }
                     config['bash-exe'] = newPath;
