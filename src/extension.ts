@@ -13,6 +13,15 @@ function bashQuote(s: string): string {
     return `'${s.replace(/'/g, `'\\''`)}'`;
 }
 
+/**
+ * terminal.sendText sometimes swallows the first character(s) (e.g. `git status` → `it status`).
+ * Workaround: lead with a few spaces — the shell ignores them, so losing one is harmless.
+ */
+const SEND_TEXT_PAD = '   ';
+function sendText(terminal: vscode.Terminal, text: string, run: boolean): void {
+    terminal.sendText(SEND_TEXT_PAD + text, run);
+}
+
 /** All matches of `name` on PATH, in PATH order (`where` on Windows can return several). */
 function findAllInPath(name: string): string[] {
     try {
@@ -240,7 +249,7 @@ export function activate(context: vscode.ExtensionContext) {
                             if (answer !== 'Run') { return; }
                         }
                         terminal.show();
-                        terminal.sendText(text, true);
+                        sendText(terminal, text, true);
                         return;
                     }
 
@@ -278,8 +287,8 @@ export function activate(context: vscode.ExtensionContext) {
                         );
                         if (answer !== 'Remove origin') { return; }
                         terminal.show();
-                        terminal.sendText(command, true);
-                        terminal.sendText(`git -C ${bashQuote(toBashPath(repo))} remote -v`, true);
+                        sendText(terminal, command, true);
+                        sendText(terminal, `git -C ${bashQuote(toBashPath(repo))} remote -v`, true);
                         return;
                     }
 
@@ -291,10 +300,10 @@ export function activate(context: vscode.ExtensionContext) {
                         );
                         if (answer !== 'Delete') { return; }
                         terminal.show();
-                        terminal.sendText(`git branch -D ${b}_backup`, true);
-                        terminal.sendText(`git branch -m ${b} ${b}_backup`, true);
-                        terminal.sendText(`git checkout ${config['main-branch-name'] ?? 'main'}`, true);
-                        terminal.sendText(`git branch`, true);
+                        sendText(terminal, `git branch -D ${b}_backup`, true);
+                        sendText(terminal, `git branch -m ${b} ${b}_backup`, true);
+                        sendText(terminal, `git checkout ${config['main-branch-name'] ?? 'main'}`, true);
+                        sendText(terminal, `git branch`, true);
                         return;
                     }
 
@@ -306,7 +315,7 @@ export function activate(context: vscode.ExtensionContext) {
                         );
                         if (answer !== 'Delete') { return; }
                         terminal.show();
-                        terminal.sendText(`git branch -D ${b}`, true);
+                        sendText(terminal, `git branch -D ${b}`, true);
                         return;
                     }
 
@@ -348,7 +357,7 @@ export function activate(context: vscode.ExtensionContext) {
                                 vscode.window.showErrorMessage('Invalid branchDelete command.');
                                 break;
                             case "cherryPick":
-                                terminal.sendText(def.text, false);
+                                sendText(terminal, def.text, false);
                                 let from_lipboard = '';
                                 try {
                                     from_lipboard = `${(await vscode.env.clipboard.readText()) ?? ''}`.trim().match(/[0-9a-f]{7,40}/)?.at(0) ?? '';
@@ -367,7 +376,7 @@ export function activate(context: vscode.ExtensionContext) {
                                     vscode.window.showErrorMessage('Invalid commit ID.');
                                     return;
                                 }
-                                terminal.sendText(`${commit_id}`, def.run);
+                                sendText(terminal, `${commit_id}`, def.run);
                                 break;
                             case 'resetHardCommit': {
                                 let rhc_clipboard = '';
@@ -388,7 +397,7 @@ export function activate(context: vscode.ExtensionContext) {
                                     vscode.window.showErrorMessage('Invalid commit ID.');
                                     return;
                                 }
-                                terminal.sendText(`${def.text}${rhc_commit_id}`, def.run);
+                                sendText(terminal, `${def.text}${rhc_commit_id}`, def.run);
                                 break;
                             }
                             case 'resetHardPush':
@@ -398,7 +407,7 @@ export function activate(context: vscode.ExtensionContext) {
                                     value: config['main-branch-name'] ?? 'main',
                                     ignoreFocusOut: true,
                                 }) ?? '').trim();
-                                terminal.sendText(def.text.replace("main", branch_name_rhp), def.run);
+                                sendText(terminal, def.text.replace("main", branch_name_rhp), def.run);
                                 break;
                             case 'resetHard':
                                 const branch_name_rh = (await vscode.window.showInputBox({
@@ -407,7 +416,7 @@ export function activate(context: vscode.ExtensionContext) {
                                     value: config['main-branch-name'] ?? 'main',
                                     ignoreFocusOut: true,
                                 }) ?? '').trim();
-                                terminal.sendText(def.text.replace("main", branch_name_rh), def.run);
+                                sendText(terminal, def.text.replace("main", branch_name_rh), def.run);
                                 break;
                             case 'cdSubmodule': {
                                 let submodulePaths: string[] = [];
@@ -431,7 +440,7 @@ export function activate(context: vscode.ExtensionContext) {
                                     if (!picked) { return; }
                                     chosenSubPath = picked;
                                 }
-                                terminal.sendText(`cd "${toBashPath(path.join(targetPath, chosenSubPath))}"`, true);
+                                sendText(terminal, `cd "${toBashPath(path.join(targetPath, chosenSubPath))}"`, true);
                                 break;
                             }
                             case 'submoduleAdd': {
@@ -447,11 +456,11 @@ export function activate(context: vscode.ExtensionContext) {
                                     ignoreFocusOut: true,
                                 }) ?? '').trim();
                                 if (!subPath) { return; }
-                                terminal.sendText(`git submodule add ${repoUrl} ${subPath}`, true);
+                                sendText(terminal, `git submodule add ${repoUrl} ${subPath}`, true);
                                 break;
                             }
                             default:
-                                terminal.sendText(def.text, def.run);
+                                sendText(terminal, def.text, def.run);
                                 break;
 
                         }
@@ -478,7 +487,7 @@ export function activate(context: vscode.ExtensionContext) {
         const terminal = getPowerShellTerminal(path.dirname(targets[0].fsPath));
         terminal.show();
         for (const t of targets) {
-            terminal.sendText(`Set-Location -LiteralPath ${psQuote(path.dirname(t.fsPath))}; & ${psQuote(t.fsPath)}`, true);
+            sendText(terminal, `Set-Location -LiteralPath ${psQuote(path.dirname(t.fsPath))}; & ${psQuote(t.fsPath)}`, true);
         }
     });
 
